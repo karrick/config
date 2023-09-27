@@ -230,7 +230,7 @@
 ;; (define-key grep-mode-map (kbd "C-x C-q") #'wgrep-change-to-wgrep-mode)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 35 VCS
+;; 40 VCS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (with-eval-after-load 'vc-hooks
@@ -254,7 +254,7 @@ If there is no .svn directory, examine if there is CVS and run
   t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 40 PROGRAMMING
+;; 50 PROGRAMMING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Tabs and indentation.
@@ -329,8 +329,22 @@ If there is no .svn directory, examine if there is CVS and run
 	 (nil (global-set-key (kbd "C-x C-s") #'tree-sitter-ispell-run-buffer)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 50 Sort
+;; 60 RESERVED
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 70 Sort
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(let ((cmd (executable-find "aspell")))
+  (if (null cmd)
+	  (message "Cannot find spelling program: consider installing 'aspell' and 'en-aspell' packages.")
+	(use-package ispell
+	  :hook (prog-mode . flyspell-prog-mode)
+	  :custom
+	  (ispell-extra-args
+	   '("--sug-mode=ultra" "--lang=en_US")
+	   "ispell-extra-args contains actual parameters that will be passed to aspell."))))
 
 ;; company -- complete anything
 (use-package company
@@ -358,7 +372,6 @@ If there is no .svn directory, examine if there is CVS and run
 (use-package copy-and-comment)
 (use-package find-file-dynamic)
 (use-package make-shebang-executable)
-(use-package setup-aspell)
 (use-package setup-gtd)
 (use-package sort-commas)
 
