@@ -113,12 +113,15 @@
 	(setenv "EDITOR" cmd)
 	(setenv "VISUAL" cmd)))
 
-(fset 'yes-or-no-p 'y-or-n-p)
-(prefer-coding-system 'utf-8)
-(put 'narrow-to-region 'disabled nil)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 10 EARLY INIT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(use-package which-key
+  :config (which-key-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 10 Window Management
+;; 20 Window Management
 ;;
 ;; WINDOW MANAGEMENT: Mimic tmux commands for sanity, but importantly, to keep
 ;; ability to use emacs in a tmux frame, you need to use a different key
@@ -137,8 +140,11 @@
 ;;   configuration. (Bind #'maximize-window)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(use-package ibuffer
-  :bind (("C-x C-b" . #'ibuffer)))
+(setq frame-title-format '("%b@"
+						   (:eval (or (file-remote-p
+									   default-directory 'host)
+									  system-name))
+						   " - Emacs"))
 
 (use-package buffer-move
   :bind (("C-x 4 i" . buf-move-up) ; swap buffer that has point with buffer above it
@@ -146,36 +152,31 @@
 		 ("C-x 4 j" . buf-move-left) ; swap buffer that has point with buffer on its left
 		 ("C-x 4 l" . buf-move-right))) ; swap buffer that has point with buffer on its right
 
-(use-package window
-  :bind ("C-x =" . #'balance-windows))
+(use-package default-text-scale
+  :config (default-text-scale-mode))
 
-(use-package windmove
-  :bind (("M-I" . windmove-up) ; move point to buffer above it
-		 ("M-K" . windmove-down) ; move point to buffer below it
-		 ("M-L" . windmove-right) ; move point to buffer on its right
-		 ("M-J" . windmove-left))) ; move point to buffer on its left
+(use-package ibuffer
+  :bind (("C-x C-b" . #'ibuffer)))
 
 (use-package ksm-window
   ;; :load-path "lisp"
   :bind (("C-x j" . ksm/window-config-restore) ; jump to window configuration from hash
 		 ("C-x p" . ksm/window-config-save) ; save window configuration to hash
-		 ("C-x 0" . ksm/delete-window)	  ; extension to existing behavior
-		 ("C-x 1" . ksm/delete-other-windows)	; extension to existing behavior
+		 ("C-x 0" . ksm/delete-window)		; extension to existing behavior
+		 ("C-x 1" . ksm/delete-other-windows) ; extension to existing behavior
 		 ;; ("C-x 2" . split-window-below) ; this is the default key binding
 		 ;; ("C-x 3" . split-window-right) ; this is the default key binding
 		 ("C-x -" . ksm/window-zoom-out) ; pop and restore window configuration from stack
 		 ("C-x +" . ksm/window-zoom-in) ; push window configuration to stack and delete other windows
-		 ))
+		 ("C-x C-p" . other-window-backward)))
+
+;; (global-set-key "\C-x\C-n" 'other-window)
 
 (use-package ksm-window-scrolling
   :bind (("M-N" . ksm/forward-line-scroll-up)
 		 ("M-P" . ksm/previous-line-scroll-down)
 		 ("M-n" . scroll-n-lines-forward)
 		 ("M-p" . scroll-n-lines-backward)))
-
-(use-package default-text-scale
-  :config (default-text-scale-mode)
-  :custom (default-text-scale-amount 5 "smaller granulations than default of 10"))
 
 (use-package switch-window
   :bind (("C-x q" . switch-window) ; like tmux C-z q, but only shows numbers to select when more than two windows
@@ -195,15 +196,14 @@
 		 ;; ("C-x 4 C-o" . switch-window-then-display-buffer)
 		 ))
 
-(global-set-key "\C-x\C-n" 'other-window)
-(global-set-key "\C-x\C-p" 'other-window-backward)
+(use-package windmove
+  :bind (("M-I" . windmove-up) ; move point to buffer above it
+		 ("M-K" . windmove-down) ; move point to buffer below it
+		 ("M-L" . windmove-right) ; move point to buffer on its right
+		 ("M-J" . windmove-left))) ; move point to buffer on its left
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 20 EARLY INIT
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(use-package which-key
-  :config (which-key-mode))
+(use-package window
+  :bind ("C-x =" . #'balance-windows))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 30 KEYS
@@ -416,11 +416,9 @@ If there is no .svn directory, examine if there is CVS and run
 ;; 80 Wrap Up
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(setq frame-title-format '("%b@"
-						   (:eval (or (file-remote-p
-									   default-directory 'host)
-									  system-name))
-						   " - Emacs"))
+(fset 'yes-or-no-p 'y-or-n-p)
+(prefer-coding-system 'utf-8)
+(put 'narrow-to-region 'disabled nil)
 
 ;; (desktop-save-mode 0)
 ;; (fido-mode 1)
