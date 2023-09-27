@@ -13,7 +13,8 @@
 	(when (file-accessible-directory-p path)
 	  (add-to-list 'exec-path path)
 	  (setenv "PATH" (concat path ":" (getenv "PATH")))
-	  (message "Prepending %s to PATH" path))))
+	  (when init-file-debug
+		(message "Prepending %s to PATH" path)))))
 
 (defun path-append (elem)
   "Append ELEM to the 'exec-path' and PATH environment variable."
@@ -24,7 +25,8 @@
 	(when (file-accessible-directory-p path)
 	  (add-to-list 'exec-path path)
 	  (setenv "PATH" (concat (getenv "PATH") ":" path))
-	  (message "Appending %s to PATH" path))))
+	  (when init-file-debug
+		(message "Appending %s to PATH" path)))))
 
 (defun path-concat (a b)
   "Concatenates two pathname components, A and B, for the OS."

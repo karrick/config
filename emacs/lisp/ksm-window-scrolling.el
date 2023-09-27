@@ -35,13 +35,13 @@
 
 (defun scroll-n-lines-forward (&optional n)
   "Scroll forward N lines (1 by default)."
-  (interactive "P")
-  (scroll-forward (prefix-numeric-value n)))
+  (interactive "p")
+  (scroll-forward n))
 
 (defun scroll-n-lines-backward (&optional n)
   "Scroll backward N lines (1 by default)."
-  (interactive "P")
-  (scroll-forward (- (prefix-numeric-value n))))
+  (interactive "p")
+  (scroll-forward (- n)))
 
 (put 'scroll-up 'unscrollable t)
 (put 'scroll-right 'unscrollable t)

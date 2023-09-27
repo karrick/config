@@ -18,4 +18,5 @@
       (async-shell-command command output-buffer))))
 
 (provide 'async-shell-command-wrapper)
+
 ;;; async-shell-command-wrapper.el ends here

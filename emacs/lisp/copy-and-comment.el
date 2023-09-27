@@ -5,6 +5,7 @@
 ;;; Code:
 
 (defun copy-and-comment (beg end)
+  "Copy from BEG to END and paste commented-out version above point."
   (interactive "*r")
   (if mark-active
       (save-excursion
