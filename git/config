@@ -1,0 +1,45 @@
+[alias]
+	br = branch
+	ci = commit
+	co = checkout
+	st = status
+	hl = log --date=short --graph --pretty='tformat:%C(auto)%d%h: %an %ad% s'
+	# revert = checkout --
+	unstage = reset HEAD
+
+# Automatic `git config branch.BRANCHNAME.rebase true` on new branches/repos
+# Changes default `git pull` to `git pull --rebase`
+[branch]
+	 autosetuprebase = always
+
+[color]
+	branch = auto
+	diff = auto
+	status = auto
+	ui = auto
+
+[core]
+	pager = less -FRSX
+	editor = emacsclient -a ''
+
+# [credential]
+# 	helper = store
+
+[fetch]
+	prune = true
+
+[init]
+	defaultBranch = main
+
+[pull]
+	rebase = true
+
+[push]
+	default = simple
+
+[rerere]
+	enabled = true
+
+[user]
+	name = Karrick S. McDermott
+	email = karrick@gmail.com

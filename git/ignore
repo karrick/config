@@ -1,0 +1,6 @@
+*.elc
+*.gemspec
+*.o
+*~
+.DS_Store
+\#*\#
