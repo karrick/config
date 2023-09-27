@@ -8,11 +8,133 @@
 ;; 00 Process Environment
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(when init-file-debug
+  (setq use-package-verbose t
+		use-package-expand-minimally nil
+		use-package-compute-statistics t
+		debug-on-error t)
+  (if (and (fboundp 'native-comp-available-p)
+		   (native-comp-available-p))
+	  (message "Native compilation is available")
+	(message "Native complation is *not* available"))
+
+  (if (and (functionp 'json-serialize) (json-serialize nil))
+	  (message "Native JSON is available")
+	(message "Native JSON is *not* available")))
+
+;;; When "cert" file in user-emacs-directory, presumably placed there as a
+;;; symbolic link to a host-specific yet non-standard system cert file, then
+;;; configure gnutls to trust it, before we attempt to contact
+;;; package-archives from which packages would be downloaded.
+(if (not (gnutls-available-p))
+	(message "GNU TLS is not available.")
+  (with-eval-after-load 'gnutls
+	(let ((cert (expand-file-name "cert" user-emacs-directory)))
+	  (when (file-readable-p cert)
+		(add-to-list 'gnutls-trustfiles cert)))))
+
+;; When running in daemon mode, change process directory to user home
+;; directory.
+(if (daemonp) (cd (expand-file-name "~")))
+
 ;; Make Elisp files in `~/.config/emacs/lisp' directory available.
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 
+;; To prioritize access latency over availability, ensure that highly
+;; ephemeral cache data is stored on local machine rather than a home
+;; directory that is potentially mounted over a network. However, do place all
+;; cache files in a directory that makes it trivial to identify the owner and
+;; optionally remove all cache data.
+(unless (memq system-type '(darwin))
+  (setenv "TMPDIR"
+		  (let* ((logname (getenv "LOGNAME"))
+				 (tmpdir (getenv "TMPDIR")))
+			(cond
+			 ((or (null tmpdir) (string-equal tmpdir ""))
+			  (file-name-concat "/" "var" "tmp" logname))
+			 ((string-suffix-p logname tmpdir)
+			  tmpdir)
+			 (t
+			  (file-name-concat tmpdir logname))))))
+
+;; https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+(use-package env-set-when-null
+  :config
+  (if init-file-debug
+	  (progn
+		(env-set-when-null-verbose "XDG_CACHE_HOME" (getenv "TMPDIR"))
+		(env-set-when-null-verbose "XDG_CONFIG_HOME" (expand-file-name "~/.config"))
+		(env-set-when-null-verbose "XDG_DATA_HOME" (expand-file-name "~/.local/share"))
+		(env-set-when-null-verbose "XDG_STATE_HOME" (expand-file-name "~/.local/state"))
+		(env-set-when-null-verbose "GOCACHE" (file-name-concat (getenv "XDG_CACHE_HOME") "go-build"))
+		;; (env-set-when-null-verbose "GOBIN" (file-name-concat (getenv "XDG_DATA_HOME") os "bin"))
+		(env-set-when-null-verbose "GOTMPDIR" (file-name-concat (getenv "XDG_CACHE_HOME") "go-tmp"))))
+  (env-set-when-null "XDG_CACHE_HOME" (getenv "TMPDIR"))
+  (env-set-when-null "XDG_CONFIG_HOME" (expand-file-name "~/.config"))
+  (env-set-when-null "XDG_DATA_HOME" (expand-file-name "~/.local/share"))
+  (env-set-when-null "XDG_STATE_HOME" (expand-file-name "~/.local/state"))
+  (env-set-when-null "GOCACHE" (file-name-concat (getenv "XDG_CACHE_HOME") "go-build"))
+  ;; (env-set-when-null "GOBIN" (file-name-concat (getenv "XDG_DATA_HOME") os "bin"))
+  (env-set-when-null "GOTMPDIR" (file-name-concat (getenv "XDG_CACHE_HOME") "go-tmp")))
+
+;; After XDG_DATA_HOME is set, can set PATH environment variable to any of the
+;; directories I typically use, provided that they exist.
+(use-package paths)
+
+(use-package hrg
+  :config
+  (let* ((state (getenv "XDG_STATE_HOME"))
+		 (history (file-name-concat state "history"))
+		 (emacs (file-name-concat history "emacs")))
+	(when (and state (file-directory-p history))
+	  (setenv "HISTFILE" emacs))))
+
+;; On machines that do not have GNU version of `ls(1)` command, use a
+;; substitute written in Elisp.
+(use-package ls-lisp
+  :unless (memq system-type '(gnu gnu/linux gnu/kfreebsd))
+  :custom
+  (ls-lisp-use-insert-directory-program nil "TODO confusing doc..."))
+
+;; On Windows prefer using `plink.exe` program for TRAMP connections.
+(when (and (eq system-type 'windows-nt) (executable-find "plink"))
+  (setq tramp-default-method "plink"))
+
+;; Elide `git(1)` paging capability for sub-processes:
+(setenv "GIT_PAGER" "")
+
+;; In lieu of paging files, dump them to a buffer using `cat(1)`:
+(setenv "PAGER" (executable-find "cat"))
+
+;; Make certain any child process knows to use `emacsclient(1)` as editor and
+;; can route file editing requests to this process.
+(let ((cmd (executable-find "emacsclient")))
+  (when cmd
+	(setenv "EDITOR" cmd)
+	(setenv "VISUAL" cmd)))
+
+(fset 'yes-or-no-p 'y-or-n-p)
+(prefer-coding-system 'utf-8)
+(put 'narrow-to-region 'disabled nil)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 10 Window Management
+;;
+;; WINDOW MANAGEMENT: Mimic tmux commands for sanity, but importantly, to keep
+;; ability to use emacs in a tmux frame, you need to use a different key
+;; prefix in emacs than tmux.
+;;
+;; REQUIREMENTS:
+;;
+;;   1. Fluidly change which window is current. Preferably hold down one or
+;;   more modifier keys and press cursor direction.
+;;
+;;   2. Fluidly swap current buffer with an adjacent buffer, keeping the
+;;   active buffer active. Preferably hold down one or more modifier keys and
+;;   press cursor direction.
+;;
+;;   3. Temporarily work on one buffer, then restore balanced buffer
+;;   configuration. (Bind #'maximize-window)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (use-package ibuffer
@@ -45,6 +167,16 @@
 		 ("C-x +" . ksm/window-zoom-in) ; push window configuration to stack and delete other windows
 		 ))
 
+(use-package ksm-window-scrolling
+  :bind (("M-N" . ksm/forward-line-scroll-up)
+		 ("M-P" . ksm/previous-line-scroll-down)
+		 ("M-n" . scroll-n-lines-forward)
+		 ("M-p" . scroll-n-lines-backward)))
+
+(use-package default-text-scale
+  :config (default-text-scale-mode)
+  :custom (default-text-scale-amount 5 "smaller granulations than default of 10"))
+
 (use-package switch-window
   :bind (("C-x q" . switch-window) ; like tmux C-z q, but only shows numbers to select when more than two windows
 		 ;; ("C-x 0" . switch-window-then-delete)
@@ -63,6 +195,139 @@
 		 ;; ("C-x 4 C-o" . switch-window-then-display-buffer)
 		 ))
 
+(global-set-key "\C-x\C-n" 'other-window)
+(global-set-key "\C-x\C-p" 'other-window-backward)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 20 EARLY INIT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(use-package which-key
+  :config (which-key-mode))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 30 KEYS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(global-unset-key (kbd "C-z")) ; disable suspend-frame
+(global-unset-key (kbd "s-p")) ; disable prompt to print a buffer
+(global-unset-key (kbd "s-q")) ; disable abrupt Emacs exit
+(global-unset-key (kbd "s-t")) ; disable ns-popup-font-panel
+(global-unset-key (kbd "s-z")) ; disable minimize
+
+(require 'compile)
+(global-set-key (kbd "<f4>")  #'recompile)
+(global-set-key (kbd "<f5>")  #'compile)
+
+(global-set-key (kbd "<f6>")  #'delete-indentation)
+(global-set-key (kbd "<f7>")  #'async-shell-command)
+(global-set-key (kbd "<f8>")  #'copy-and-comment)
+(global-set-key (kbd "<f9>")  #'clean-and-indent)
+(global-set-key (kbd "<f10>") #'revert-buffer)
+
+(global-set-key (kbd "C-x C-b") #'ibuffer)
+
+;; (define-key grep-mode-map (kbd "C-x C-q") #'wgrep-change-to-wgrep-mode)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 35 VCS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(with-eval-after-load 'vc-hooks
+  (define-key vc-prefix-map "=" #'vc-ediff))
+
+;; fossil
+(autoload 'vc-fossil-registered "vc-fossil")
+(add-to-list 'vc-handled-backends 'Fossil)
+
+;; svn
+(autoload 'svn-status "psvn"
+  "Examine the status of Subversion working copy in directory DIR.
+If ARG is -, allow editing of the parameters. One could add -N to
+run svn status non recursively to make it faster.  For every
+other non nil ARG pass the -u argument to `svn status', which
+asks svn to connect to the repository and check to see if there
+are updates there.
+
+If there is no .svn directory, examine if there is CVS and run
+`cvs-examine'. Otherwise ask if to run `dired'."
+  t)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 40 PROGRAMMING
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Tabs and indentation.
+
+;; (defvaralias 'c-basic-offset 'tab-width)
+;; (defvaralias
+(defvaralias 'cperl-indent-level 'tab-width)
+(defvaralias 'perl-indent-level 'tab-width)
+(defvaralias 'yaml-indent-level 'tab-width)
+
+(add-hook 'prog-mode-hook #'highlight-indent-guides-mode)
+(add-hook 'prog-mode-hook #'hl-line-mode)
+
+(use-package flycheck
+  :config
+  (global-flycheck-mode)
+  (let ((cmd (executable-find "shellcheck")))
+	(if (null cmd)
+		(message "Cannot find 'shellcheck' program.")
+	  (setq flycheck-sh-shellcheck-executable cmd)
+	  (add-hook 'sh-mode-hook 'flycheck-mode))))
+
+(use-package lsp-mode
+  :init
+  ;; Empirically discovered that lsp-keymap-prefix must be set before loading
+  ;; lsp-mode.
+  (setq lsp-keymap-prefix "C-c l")
+
+  ;; :bind ("C-x 4 M-." . xref-find-definitions-other-window)
+
+  :custom
+  (read-process-output-max (* 4 1024 1024) "4 MiB to handle larger payloads from LISP.")
+  (gc-cons-threshold 1000000 "1 million")
+
+  :config
+  (lsp-enable-which-key-integration t))
+
+(add-hook 'markdown-mode-hook #'visual-line-mode)
+
+(defun aj-toggle-fold ()
+  "Toggle fold all lines larger than indentation on current line."
+  (interactive)
+  (let ((col 1))
+	(save-excursion
+	  (back-to-indentation)
+	  (setq col (+ 1 (current-column)))
+	  (set-selective-display
+	   (if selective-display nil (or col 1))))))
+(global-set-key (kbd "C-x $") #'aj-toggle-fold)
+
+(require 'setup-elisp-mode)
+(require 'setup-golang-mode)
+(require 'setup-javascript-mode)
+(require 'setup-org-mode)
+(require 'setup-python-mode)
+(require 'setup-ruby-mode)
+(require 'setup-rust-mode)
+(require 'setup-zig-mode)
+
+;; tree-sitter is not yet configured properly.
+(when nil
+  (require 'tree-sitter)
+  (require 'tree-sitter-langs)
+  (require 'tree-sitter-indent)
+  (global-tree-sitter-mode)
+  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
+  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-indent-mode)
+  (progn
+	(require 'tree-sitter-ispell)
+	(cond
+	 (nil (global-set-key (kbd "C-x C-s") #'tree-sitter-ispell-run-at-point))
+	 (nil (global-set-key (kbd "C-x C-s") #'tree-sitter-ispell-run-buffer)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 50 Sort
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -71,21 +336,104 @@
 (use-package company
   :hook prog-mode)
 
-;; On machines that do not have GNU version of `ls(1)` command, use a
-;; substitute written in Elisp.
-(use-package ls-lisp
-  :unless (memq system-type '(gnu gnu/linux gnu/kfreebsd))
-  :custom
-  (ls-lisp-use-insert-directory-program nil "TODO"))
-
 ;; By default bind "C-x C-r" to rgrep, but when ripgrep command and deadgrep
 ;; package are both available, rebind to the latter to use the former...
 (let ((cmd (executable-find "rg")))
   (if (not cmd)
 	  (global-set-key (kbd "C-x C-r") #'rgrep)
 	(use-package deadgrep
-	  :bind (("C-x C-r" . deadgrep))
-	  :config (setq deadgrep-executable cmd))))
+	  :bind (("C-x C-r" . deadgrep)))))
+
+(use-package unfill-paragraph
+  :bind ("M-Q" . unfill-paragraph))
+
+(use-package async-shell-command-wrapper
+  :bind (("M-&" . ksm/async-shell-command)
+		 ("ESC &" . ksm/async-shell-command)
+		 ("<f7>" . ksm/async-shell-command)))
+
+(use-package align)
+(use-package browser-open)
+(use-package clean-and-indent)
+(use-package copy-and-comment)
+(use-package find-file-dynamic)
+(use-package make-shebang-executable)
+(use-package setup-aspell)
+(use-package setup-gtd)
+(use-package sort-commas)
+
+(when nil
+  (require 'expand-region)
+  (global-set-key (kbd "M-=") #'er/expand-region)
+  (global-set-key (kbd "ESC =") #'er/expand-region)
+  (global-set-key (kbd "M--") #'er/contract-region)
+  (global-set-key (kbd "ESC -") #'er/contract-region))
+
+(when nil
+  (require 'multiple-cursors)
+  (global-set-key (kbd "C-S-c C-S-c") #'mc/edit-lines)
+  (global-set-key (kbd "C-c C-S-c") #'mc/edit-lines)
+  (global-set-key (kbd "C->") #'mc/mark-next-like-this)
+  (global-set-key (kbd "C-<") #'mc/mark-previous-like-this)
+  (global-set-key (kbd "C-c C-<") #'mc/mark-all-like-this)
+  (global-set-key (kbd "C-c C->") #'mc/mark-more-like-this-extended))
+
+;;
+;; xterm-color is superior to ansi-color
+;;
+
+;; compilation buffers
+(defun my/advice-compilation-filter (f proc string)
+  "Transform ANSI sequences in string to Emacs face."
+  (funcall f proc (xterm-color-filter string)))
+(advice-add 'compilation-filter :around #'my/advice-compilation-filter)
+
+;; shell mode
+(setq comint-output-filter-functions
+	  (remove 'ansi-color-process-output comint-output-filter-functions))
+(add-hook 'shell-mode-hook
+		  #'(lambda ()
+			  ;; Disable font-locking in this buffer to improve
+			  ;; performance
+			  (font-lock-mode 0)
+			  ;; Prevent font-locking from being re-enabled in
+			  ;; this buffer
+			  (make-local-variable 'font-lock-function)
+			  (setq font-lock-function (lambda (_) nil))
+			  ;; Add xterm-color hook
+			  (add-hook 'comint-preoutput-filter-functions 'xterm-color-filter nil t)))
+
+;; eshell mode
+(with-eval-after-load 'esh-mode
+  (add-hook 'eshell-before-prompt-hook
+			#'(lambda ()
+				(setq xterm-color-preserve-properties t)))
+  (add-to-list 'eshell-preoutput-filter-functions 'xterm-color-filter)
+  (setq eshell-output-filter-functions (remove 'eshell-handle-ansi-color eshell-output-filter-functions))
+  (setenv "TERM" "xterm-256color"))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 80 Wrap Up
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(setq frame-title-format '("%b@"
+						   (:eval (or (file-remote-p
+									   default-directory 'host)
+									  system-name))
+						   " - Emacs"))
+
+;; (desktop-save-mode 0)
+;; (fido-mode 1)
+;; (ido-mode 1)
+;; (vertico-mode)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 90 Localhost Configuration
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(if (locate-library "localhost")
+	(require 'localhost)
+  (message "no localhost file found"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 99 Custom Set Variables
@@ -105,7 +453,6 @@
  '(custom-enabled-themes '(zenburn))
  '(custom-safe-themes
    '("f366d4bc6d14dcac2963d45df51956b2409a15b770ec2f6d730e73ce0ca5c8a7" "5d966953e653a8583b3ad630d15f8935e9077f7fbfac456cb638eedad62f4480" "2dc03dfb67fbcb7d9c487522c29b7582da20766c9998aaad5e5b63b5c27eec3f" "a3e99dbdaa138996bb0c9c806bc3c3c6b4fd61d6973b946d750b555af8b7555b" "fc48cc3bb3c90f7761adf65858921ba3aedba1b223755b5924398c666e78af8b" "70cfdd2e7beaf492d84dfd5f1955ca358afb0a279df6bd03240c2ce74a578e9e" "9040edb21d65cef8a4a4763944304c1a6655e85aabb6e164db6d5ba4fc494a04" "b77a00d5be78f21e46c80ce450e5821bdc4368abf4ffe2b77c5a66de1b648f10" "78e9a3e1c519656654044aeb25acb8bec02579508c145b6db158d2cfad87c44e" default))
- '(default-text-scale-amount 20)
  '(diff-switches "-u")
  '(dired-auto-revert-buffer t)
  '(dired-listing-switches "-AbFhl")
@@ -114,7 +461,6 @@
  '(ediff-window-setup-function 'ediff-setup-windows-plain)
  '(fancy-splash-image "")
  '(fill-column 78)
- '(global-flycheck-mode t)
  '(highlight-indent-guides-method 'character)
  '(inhibit-startup-screen t)
  '(line-number-mode t)
