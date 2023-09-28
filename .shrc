@@ -1,0 +1,134 @@
+# ~/.shrc: interactive shells -*- shell-script -*-
+
+# BACKGROUND
+#
+# Things that need to be done for every interactive login should be
+# done here. Alternatively, things that only need to be done once when
+# a user logs into the machine should be done in ~/.profile file.
+
+# echo >&2 "$SHELL (interactive): running $HOME/.shrc"
+
+if test -n "$BASH_VERSION" ; then
+	_SHELL="bash"
+elif test -n "$KSH_VERSION" ; then
+	_SHELL="ksh"
+elif test -n "$ZSH_VERSION" ; then
+	_SHELL="zsh"
+elif test -z "$PS3" ; then
+	_SHELL="sh"
+else
+	_SHELL="unknown"
+fi
+
+case $_SHELL in
+	bash)
+		# check the window size after each command and, if necessary,
+		# update the values of LINES and COLUMNS.
+		shopt -s checkwinsize
+
+		# append to the history file rather than overwriting it.
+		shopt -s histappend
+
+		# enable programmable completion features (you don't need to
+		# enable this, if it's already enabled in /etc/bash.bashrc and
+		# /etc/profile sources /etc/bash.bashrc).
+		if ! shopt -oq posix; then
+			if [ -f /usr/share/bash-completion/bash_completion ]; then
+				. /usr/share/bash-completion/bash_completion
+			elif [ -f /etc/bash_completion ]; then
+				. /etc/bash_completion
+			fi
+		fi
+
+		PS0='\[\e[2m\]# START: \D{%F}T\A\[\e[22m\]\n'
+		case color in
+			mono)
+				PS1='\u@\H:\w\$ '
+				;;
+			color)
+				PS1="\[\e[2m\]# FINISH: \D{%F}T\A\[\e[22m\]\n[\[\$( _code=\$? ; if [ \$_code -eq 0 ] ; then echo \"\\e[32m\$_code\e[39m\" ; else echo \"\e[1;31m\$_code\e[22;39m\" ; fi )\]] \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\] \$ "
+				;;								
+			fancy)
+				if [ -n "$HOSTPROMPT" ] ; then
+					PS1="\[\e[2m\]# FINISH: \D{%F}T\A\[\e[22m\]\n[\[\$( _code=\$? ; if [ \$_code -eq 0 ] ; then echo \"\\e[32m\$_code\e[39m\" ; else echo \"\e[1;31m\$_code\e[22;39m\" ; fi )\]] \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]${HOSTPROMPT}\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]"
+				else
+					PS1="\[\e[2m\]# FINISH: \D{%F}T\A\[\e[22m\]\n[\[\$( _code=\$? ; if [ \$_code -eq 0 ] ; then echo \"\\e[32m\$_code\e[39m\" ; else echo \"\e[1;31m\$_code\e[22;39m\" ; fi )\]] \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]"
+				fi
+
+				if which git_prompt >/dev/null 2>&1 ; then
+					PS1="${PS1}\[\e[35m\]\$(git_prompt)\[\e[39m\]"
+				fi
+
+				PS1="${PS1}\$ "
+				;;
+		esac
+		;;
+
+	ksh|sh|zsh) : ;;
+	*) echo >&2 "unrecognized shell: '${_SHELL}'" ;;
+esac
+
+# Make less more friendly for non-text input files, see lesspipe(1).
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+alias clip='xclip -selection clipboard'
+alias dfs='df -lh -x devtmpfs -x tmpfs --output=source,ipcent,size,used,avail,pcent,target'
+alias hlf='ls -hlF'
+alias pg="pgrep -au $LOGNAME"
+
+alias hist='histogram --fold --descending'
+alias histr='histogram --fold --descending --raw'
+alias histw='histogram --fold --descending --width 80'
+
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+	if [ -r ~/.dircolors ] ; then
+		eval "$(dircolors -b ~/.dircolors)"
+	else
+		eval "$(dircolors --sh)"
+	fi
+	alias ls='ls --color=auto'
+	alias grep='grep --color=auto'
+	alias fgrep='fgrep --color=auto'
+	alias egrep='egrep --color=auto'
+fi
+
+unalias rm 2>/dev/null || :
+unalias cp 2>/dev/null || :
+unalias mv 2>/dev/null || :
+
+[ "$shell" = "sh" ] || hrg() { (cd ~/.history.d && exec rg "$*" ) }
+
+dos2unix () { tr -d '\r' <"$1" >"$2" }
+mac2unix () { tr '\r' '\n' <"$1" >"$2" }
+unix2mac () { tr '\n' '\r' <"$1" >"$2" }
+unix2dos () { ruby -pe '$_=$_.gsub(/$/, "\r")' <$1 >$2 }
+
+hexl() { local file=$1 ; emacs -q -nw --eval "(hexl-find-file \"$file\")" ; }
+
+set_gnu_screen_hardstatus_line () { printf "\e_$*\e\\" }
+set_gnu_screen_window_title () { printf "\ek$*\e\\" }
+set_xterm_window_title () { printf "\e]0;$*\007" }
+
+set_title ()
+{
+    local title=$1
+    case $TERM in
+	xterm* | gnome* | vt100 | rxvt)
+	    # append cwd enclosed in parens
+	    set_xterm_window_title "$title ($(pwd))"
+	    ;;
+	screen)
+	    # use extra hardstatus line for dirs, instead of combining
+	    set_gnu_screen_hardstatus_line "$(dirs)"
+	    set_gnu_screen_window_title "$title"
+	    ;;
+	*)
+	    ;;
+    esac
+}
+
+# [ "$_SHELL" != "sh" -a "$TERM" != "dumb" ] && which starship >/dev/null 2>&1 && eval "$(starship init $_SHELL)"
+unset _SHELL
+
+[ ! -r "$HOME/.cargo/env" ] || . "$HOME/.cargo/env"
