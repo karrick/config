@@ -94,7 +94,7 @@
 (use-package ls-lisp
   :unless (memq system-type '(gnu gnu/linux gnu/kfreebsd))
   :custom
-  (ls-lisp-use-insert-directory-program nil "TODO confusing doc..."))
+  (ls-lisp-use-insert-directory-program nil "TODO confusing documentation..."))
 
 ;; On Windows prefer using `plink.exe` program for TRAMP connections.
 (when (and (eq system-type 'windows-nt) (executable-find "plink"))
@@ -206,7 +206,7 @@
   :bind ("C-x =" . #'balance-windows))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 30 RESERVED
+;; 30 MISCELLANEOUS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (use-package align)
@@ -259,7 +259,7 @@
   :bind ("M-Q" . unfill-paragraph))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 35 ORG
+;; 40 ORG
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; (require 'setup-org-mode)
@@ -324,7 +324,7 @@
 					 "TODO DOCUMENT"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 40 VCS
+;; 50 VCS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (with-eval-after-load 'vc-hooks
@@ -348,7 +348,7 @@ If there is no .svn directory, examine if there is CVS and run
   t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 50 PROGRAMMING
+;; 60 PROGRAMMING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Tabs and indentation.
@@ -359,8 +359,19 @@ If there is no .svn directory, examine if there is CVS and run
 (defvaralias 'perl-indent-level 'tab-width)
 (defvaralias 'yaml-indent-level 'tab-width)
 
-(add-hook 'prog-mode-hook #'highlight-indent-guides-mode)
+;; (add-hook 'prog-mode-hook #'highlight-indent-guides-mode)
 (add-hook 'prog-mode-hook #'hl-line-mode)
+
+(defun aj-toggle-fold ()
+  "Toggle fold all lines larger than indentation on current line."
+  (interactive)
+  (let ((col 1))
+	(save-excursion
+	  (back-to-indentation)
+	  (setq col (+ 1 (current-column)))
+	  (set-selective-display
+	   (if selective-display nil (or col 1))))))
+(global-set-key (kbd "C-x $") #'aj-toggle-fold)
 
 (use-package flycheck
   :defer t
@@ -373,6 +384,9 @@ If there is no .svn directory, examine if there is CVS and run
 	  (add-hook 'sh-mode-hook 'flycheck-mode))))
 
 (use-package lsp-mode
+  :after which-key
+  :ensure t
+
   :init
   ;; Empirically discovered that lsp-keymap-prefix must be set before loading
   ;; lsp-mode.
@@ -386,23 +400,72 @@ If there is no .svn directory, examine if there is CVS and run
   (gc-cons-threshold 1000000 "1 million")
 
   :config
-  (lsp-enable-which-key-integration t))
+  (when (featurep 'which-key)
+	(lsp-enable-which-key-integration t)))
 
 (add-hook 'markdown-mode-hook #'visual-line-mode)
 
-(defun aj-toggle-fold ()
-  "Toggle fold all lines larger than indentation on current line."
-  (interactive)
-  (let ((col 1))
-	(save-excursion
-	  (back-to-indentation)
-	  (setq col (+ 1 (current-column)))
-	  (set-selective-display
-	   (if selective-display nil (or col 1))))))
-(global-set-key (kbd "C-x $") #'aj-toggle-fold)
-
 (require 'setup-elisp-mode)
-(require 'setup-golang-mode)
+
+(use-package go-mode
+  :after lsp-mode
+  :ensure t
+
+  :config
+
+  ;; Use gogetdoc as it provides better documentation.
+  (when (executable-find "gogetdoc")
+	(setq godoc-at-point-function #'godoc-gogetdoc))
+
+  (let ((cmd (executable-find "gopls")))
+	(if cmd
+		(progn
+		  (lsp-register-custom-settings
+		   '(("gopls.completeUnimported" t t)
+			 ("gopls.staticcheck" t t)
+			 ("gopls.usePlaceholders" t t)))
+
+		  ;; When gopls language server is found, install hooks for go-mode to
+		  ;; use it.
+		  (when (featurep 'lsp-mode)
+			(setq lsp-go-gopls-server-path cmd))
+
+		  ;; Set up before-save hooks to format buffer and add modify
+		  ;; imports. Ensure there is not another gofmt(1) or goimports(1)
+		  ;; hook enabled.
+		  (defun lsp-go-install-save-hooks ()
+			(add-hook 'before-save-hook #'lsp-format-buffer t t)
+			(add-hook 'before-save-hook #'lsp-organize-imports t t))
+
+		  (add-hook 'go-mode-hook #'lsp-go-install-save-hooks)
+		  (add-hook 'go-mode-hook #'lsp))
+	  (progn
+		;; When cannot find gopls language server, configure a
+		;; different go-mode-hook for graceful feature degredation.
+
+		;; Prefer goimports, but when not found, use gofmt.
+		(setq gofmt-command (or (executable-find "goimports")
+								(executable-find "gofmt")))
+		(add-hook 'go-mode-hook
+				  #'(lambda ()
+					  (add-hook 'before-save-hook #'gofmt-before-save nil t))))))
+
+  (when nil
+	;; Fix parsing of error and warning lines in compiler output.
+	(setq compilation-error-regexp-alist-alist ; first remove the standard conf; it's not good.
+		  (remove 'go-panic
+				  (remove 'go-test compilation-error-regexp-alist-alist)))
+	;; Make another one that works better and strips more space at the beginning.
+	(add-to-list 'compilation-error-regexp-alist-alist
+				 '(go-test . ("^[[:space:]]*\\([_a-zA-Z./][_a-zA-Z0-9./]*\\):\\([0-9]+\\):.*$" 1 2)))
+	(add-to-list 'compilation-error-regexp-alist-alist
+				 '(go-panic . ("^[[:space:]]*\\([_a-zA-Z./][_a-zA-Z0-9./]*\\):\\([0-9]+\\)[[:space:]].*$" 1 2)))
+	;; override.
+	(add-to-list 'compilation-error-regexp-alist 'go-test t)
+	(add-to-list 'compilation-error-regexp-alist 'go-panic t))
+
+  :mode ("\\.go\\'"))
+
 (require 'setup-javascript-mode)
 (require 'setup-python-mode)
 (require 'setup-ruby-mode)
@@ -562,7 +625,7 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(buffer-move company deadgrep default-text-scale fic-mode find-file-in-repository flycheck gnu-elpa-keyring-update go-mode highlight-indent-guides jenkinsfile-mode js2-mode json-mode just-mode lsp-mode lsp-pyright lsp-ui markdown-mode nginx-mode nov projectile puppet-mode rust-mode rustic switch-window system-packages tree-sitter tree-sitter-indent tree-sitter-ispell tree-sitter-langs vc-fossil vterm which-key xterm-color yaml-mode zenburn-theme zig-mode))
+   '(buffer-move company deadgrep default-text-scale fic-mode find-file-in-repository flycheck gnu-elpa-keyring-update highlight-indent-guides jenkinsfile-mode js2-mode json-mode just-mode lsp-pyright lsp-ui markdown-mode nginx-mode nov projectile puppet-mode rust-mode rustic switch-window system-packages tree-sitter tree-sitter-indent tree-sitter-ispell tree-sitter-langs vc-fossil vterm which-key xterm-color yaml-mode zenburn-theme zig-mode))
  '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
