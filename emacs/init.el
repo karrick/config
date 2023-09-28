@@ -206,28 +206,122 @@
   :bind ("C-x =" . #'balance-windows))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 30 KEYS
+;; 30 RESERVED
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(global-unset-key (kbd "C-z")) ; disable suspend-frame
-(global-unset-key (kbd "s-p")) ; disable prompt to print a buffer
-(global-unset-key (kbd "s-q")) ; disable abrupt Emacs exit
-(global-unset-key (kbd "s-t")) ; disable ns-popup-font-panel
-(global-unset-key (kbd "s-z")) ; disable minimize
+(use-package align)
 
-(require 'compile)
-(global-set-key (kbd "<f4>")  #'recompile)
-(global-set-key (kbd "<f5>")  #'compile)
+;; aspell
+(let ((cmd (executable-find "aspell")))
+  (if (null cmd)
+	  (message "Cannot find spelling program: consider installing 'aspell' and 'en-aspell' packages.")
+	(use-package ispell
+	  :hook (prog-mode . flyspell-prog-mode)
+	  :custom
+	  (ispell-extra-args
+	   '("--sug-mode=ultra" "--lang=en_US")
+	   "ispell-extra-args contains actual parameters that will be passed to aspell."))))
 
-(global-set-key (kbd "<f6>")  #'delete-indentation)
-(global-set-key (kbd "<f7>")  #'async-shell-command)
-(global-set-key (kbd "<f8>")  #'copy-and-comment)
-(global-set-key (kbd "<f9>")  #'clean-and-indent)
-(global-set-key (kbd "<f10>") #'revert-buffer)
+(use-package async-shell-command-wrapper
+  :bind (("M-&" . ksm/async-shell-command)
+		 ("ESC &" . ksm/async-shell-command)
+		 ("<f7>" . ksm/async-shell-command)))
 
-(global-set-key (kbd "C-x C-b") #'ibuffer)
+(use-package browser-open)
 
-;; (define-key grep-mode-map (kbd "C-x C-q") #'wgrep-change-to-wgrep-mode)
+(use-package clean-and-indent
+  :bind ("<f9>" . clean-and-indent))
+
+;; company -- complete anything
+(use-package company
+  :hook prog-mode)
+
+(use-package copy-and-comment
+  :bind ("<f8>" . copy-and-comment))
+
+(use-package empty-string)
+
+(use-package find-file-dynamic)
+
+(use-package make-shebang-executable)
+
+;; By default bind "C-x C-r" to rgrep, but when ripgrep command and deadgrep
+;; package are both available, rebind to the latter to use the former...
+(let ((cmd (executable-find "rg")))
+  (if (not cmd)
+	  (global-set-key (kbd "C-x C-r") #'rgrep)
+	(use-package deadgrep
+	  :bind (("C-x C-r" . deadgrep)))))
+
+(use-package sort-commas)
+
+(use-package unfill-paragraph
+  :bind ("M-Q" . unfill-paragraph))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 35 ORG
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; (require 'setup-org-mode)
+;; (require 'empty-string)
+;; (require 'org)
+;; (require 'org-mode-begin-src)
+
+(use-package org
+  :after empty-string
+
+  :bind (("C-c a" . org-agenda)
+		 ("C-c c" . org-capture))
+
+  :config
+
+  (defun org-mode-begin-src (language)
+	"Insert an 'org-mode' source block using LANGUAGE."
+	(interactive "sLanguage: ")
+	(if (empty-string-p language)
+		(insert (concat "#+BEGIN_SRC\n\n#+END_SRC\n"))
+	  (insert (concat "#+BEGIN_SRC " language "\n\n#+END_SRC\n")))
+	(previous-line 2))
+
+  (define-key org-mode-map (kbd "C-c s") #'org-mode-begin-src)
+
+  (require 'ol)
+  (define-key org-mode-map (kbd "C-c l") #'org-store-link)
+
+  (add-hook 'org-mode-hook #'(lambda ()
+							   (local-set-key (kbd "C-c l") 'org-store-link)))
+  :custom
+
+  (org-clock-mode-line-today 'today)
+  (org-indent-mode t)
+  (org-todo-keywords '((sequence "TODO(t)" "STARTED(s)" "WAITING(w)" "PR(p)" "|" "MERGED(m)" "DONE(d)" "CANCELLED(c)" "DELEGATED(g)")))
+
+  (org-agenda-files '("~/gtd/inbox.org"
+					  "~/gtd/projects.org"
+					  "~/gtd/tickler.org")
+					"TODO DOCUMENT")
+
+  (org-capture-templates '(("t" "Todo [inbox]" entry
+							(file+headline "~/gtd/inbox.org" "Inbox")
+							"* TODO %i%?")
+						   ;; ("p" "Project [projects]" entry
+						   ;;  (file+headline "~/gtd/projects.org" "Projects")
+						   ;;  "* TODO %i%?")
+						   ("T" "Tickler" entry
+							(file+headline "~/gtd/tickler.org" "Tickler")
+							"* %i%? \n %U"))
+						 "TODO DOCUMENT")
+
+  (org-refile-targets '(("~/gtd/projects.org" :maxlevel . 3)
+						("~/gtd/agendas.org" :level . 1)
+						("~/gtd/inbox.org" :maxlevel . 2)
+						("~/gtd/references.org" :level . 1)
+						("~/gtd/someday.org" :level . 1)
+						("~/gtd/tickler.org" :maxlevel . 2))
+					  "TODO DOCUMENT")
+
+  (org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)"))
+					 "TODO DOCUMENT"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 40 VCS
@@ -269,6 +363,7 @@ If there is no .svn directory, examine if there is CVS and run
 (add-hook 'prog-mode-hook #'hl-line-mode)
 
 (use-package flycheck
+  :defer t
   :config
   (global-flycheck-mode)
   (let ((cmd (executable-find "shellcheck")))
@@ -283,7 +378,8 @@ If there is no .svn directory, examine if there is CVS and run
   ;; lsp-mode.
   (setq lsp-keymap-prefix "C-c l")
 
-  ;; :bind ("C-x 4 M-." . xref-find-definitions-other-window)
+  ;; :bind
+  ;; ("C-x 4 M-." . xref-find-definitions-other-window)
 
   :custom
   (read-process-output-max (* 4 1024 1024) "4 MiB to handle larger payloads from LISP.")
@@ -308,7 +404,6 @@ If there is no .svn directory, examine if there is CVS and run
 (require 'setup-elisp-mode)
 (require 'setup-golang-mode)
 (require 'setup-javascript-mode)
-(require 'setup-org-mode)
 (require 'setup-python-mode)
 (require 'setup-ruby-mode)
 (require 'setup-rust-mode)
@@ -329,67 +424,29 @@ If there is no .svn directory, examine if there is CVS and run
 	 (nil (global-set-key (kbd "C-x C-s") #'tree-sitter-ispell-run-buffer)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 60 RESERVED
+;; 60 KEYS -- any additional key bindings not covered above
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(global-unset-key (kbd "C-z")) ; disable suspend-frame
+(global-unset-key (kbd "s-p")) ; disable prompt to print a buffer
+(global-unset-key (kbd "s-q")) ; disable abrupt Emacs exit
+(global-unset-key (kbd "s-t")) ; disable ns-popup-font-panel
+(global-unset-key (kbd "s-z")) ; disable minimize
+
+(global-set-key (kbd "C-x C-b") #'ibuffer)
+
+(require 'compile)
+(global-set-key (kbd "<f4>")  #'recompile)
+(global-set-key (kbd "<f5>")  #'compile)
+
+(global-set-key (kbd "<f6>")  #'delete-indentation)
+(global-set-key (kbd "<f10>") #'revert-buffer)
+
+;; (define-key grep-mode-map (kbd "C-x C-q") #'wgrep-change-to-wgrep-mode)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 70 Sort
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(let ((cmd (executable-find "aspell")))
-  (if (null cmd)
-	  (message "Cannot find spelling program: consider installing 'aspell' and 'en-aspell' packages.")
-	(use-package ispell
-	  :hook (prog-mode . flyspell-prog-mode)
-	  :custom
-	  (ispell-extra-args
-	   '("--sug-mode=ultra" "--lang=en_US")
-	   "ispell-extra-args contains actual parameters that will be passed to aspell."))))
-
-;; company -- complete anything
-(use-package company
-  :hook prog-mode)
-
-;; By default bind "C-x C-r" to rgrep, but when ripgrep command and deadgrep
-;; package are both available, rebind to the latter to use the former...
-(let ((cmd (executable-find "rg")))
-  (if (not cmd)
-	  (global-set-key (kbd "C-x C-r") #'rgrep)
-	(use-package deadgrep
-	  :bind (("C-x C-r" . deadgrep)))))
-
-(use-package unfill-paragraph
-  :bind ("M-Q" . unfill-paragraph))
-
-(use-package async-shell-command-wrapper
-  :bind (("M-&" . ksm/async-shell-command)
-		 ("ESC &" . ksm/async-shell-command)
-		 ("<f7>" . ksm/async-shell-command)))
-
-(use-package align)
-(use-package browser-open)
-(use-package clean-and-indent)
-(use-package copy-and-comment)
-(use-package find-file-dynamic)
-(use-package make-shebang-executable)
-(use-package setup-gtd)
-(use-package sort-commas)
-
-(when nil
-  (require 'expand-region)
-  (global-set-key (kbd "M-=") #'er/expand-region)
-  (global-set-key (kbd "ESC =") #'er/expand-region)
-  (global-set-key (kbd "M--") #'er/contract-region)
-  (global-set-key (kbd "ESC -") #'er/contract-region))
-
-(when nil
-  (require 'multiple-cursors)
-  (global-set-key (kbd "C-S-c C-S-c") #'mc/edit-lines)
-  (global-set-key (kbd "C-c C-S-c") #'mc/edit-lines)
-  (global-set-key (kbd "C->") #'mc/mark-next-like-this)
-  (global-set-key (kbd "C-<") #'mc/mark-previous-like-this)
-  (global-set-key (kbd "C-c C-<") #'mc/mark-all-like-this)
-  (global-set-key (kbd "C-c C->") #'mc/mark-more-like-this-extended))
 
 ;;
 ;; xterm-color is superior to ansi-color
@@ -424,6 +481,22 @@ If there is no .svn directory, examine if there is CVS and run
   (add-to-list 'eshell-preoutput-filter-functions 'xterm-color-filter)
   (setq eshell-output-filter-functions (remove 'eshell-handle-ansi-color eshell-output-filter-functions))
   (setenv "TERM" "xterm-256color"))
+
+(use-package expand-region
+  :disabled
+  :bind (("M-=" . er/expand-region)
+		 ("ESC =" . er/expand-region)
+		 ("M--" . er/contract-region)
+		 ("ESC -" . er/contract-region)))
+
+(use-package multiple-cursors
+  :disabled
+  :bind (("C-S-c C-S-c" . mc/edit-lines)
+		 ("C-c C-S-c" . mc/edit-lines)
+		 ("C->" . mc/mark-next-like-this)
+		 ("C-<" . mc/mark-previous-like-this)
+		 ("C-c C-<" . mc/mark-all-like-this)
+		 ("C-c C->" . mc/mark-more-like-this-extended)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 80 Wrap Up
