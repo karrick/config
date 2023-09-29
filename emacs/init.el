@@ -22,6 +22,12 @@
 	  (message "Native JSON is available")
 	(message "Native JSON is *not* available")))
 
+(setq package-archives
+	  '(("gnu" . "https://elpa.gnu.org/packages/")
+		("nongnu" . "https://elpa.nongnu.org/nongnu/")
+		("melpa-stable" . "https://stable.melpa.org/packages/")
+		("melpa" . "https://melpa.org/packages/")))
+
 ;;; When "cert" file in user-emacs-directory, presumably placed there as a
 ;;; symbolic link to a host-specific yet non-standard system cert file, then
 ;;; configure gnutls to trust it, before we attempt to contact
@@ -45,7 +51,7 @@
 ;; directory that is potentially mounted over a network. However, do place all
 ;; cache files in a directory that makes it trivial to identify the owner and
 ;; optionally remove all cache data.
-(unless (memq system-type '(darwin))
+(unless (eq system-type 'darwin)
   (setenv "TMPDIR"
 		  (let* ((logname (getenv "LOGNAME"))
 				 (tmpdir (getenv "TMPDIR")))
@@ -77,24 +83,22 @@
   ;; (env-set-when-null "GOBIN" (file-name-concat (getenv "XDG_DATA_HOME") os "bin"))
   (env-set-when-null "GOTMPDIR" (file-name-concat (getenv "XDG_CACHE_HOME") "go-tmp")))
 
+(let* ((state (getenv "XDG_STATE_HOME"))
+	   (history (file-name-concat state "history"))
+	   (emacs (file-name-concat history "emacs")))
+  (when (and state (file-directory-p history))
+	(setenv "HISTFILE" emacs)))
+
 ;; After XDG_DATA_HOME is set, can set PATH environment variable to any of the
 ;; directories I typically use, provided that they exist.
 (use-package paths)
 
-(use-package hrg
-  :config
-  (let* ((state (getenv "XDG_STATE_HOME"))
-		 (history (file-name-concat state "history"))
-		 (emacs (file-name-concat history "emacs")))
-	(when (and state (file-directory-p history))
-	  (setenv "HISTFILE" emacs))))
-
 ;; On machines that do not have GNU version of `ls(1)` command, use a
 ;; substitute written in Elisp.
-(use-package ls-lisp
-  :unless (memq system-type '(gnu gnu/linux gnu/kfreebsd))
-  :custom
-  (ls-lisp-use-insert-directory-program nil "TODO confusing documentation..."))
+(when nil
+  (unless (memq system-type '(gnu gnu/linux gnu/kfreebsd))
+    (require 'ls-lisp)
+    (ls-lisp-use-insert-directory-program nil "TODO confusing documentation...")))
 
 ;; On Windows prefer using `plink.exe` program for TRAMP connections.
 (when (and (eq system-type 'windows-nt) (executable-find "plink"))
@@ -117,7 +121,10 @@
 ;; 10 EARLY INIT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(use-package hrg)
+
 (use-package which-key
+  :ensure t
   :config (which-key-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -146,20 +153,26 @@
 									  system-name))
 						   " - Emacs"))
 
-(use-package buffer-move
-  :bind (("C-x 4 i" . buf-move-up) ; swap buffer that has point with buffer above it
-		 ("C-x 4 k" . buf-move-down) ; swap buffer that has point with buffer below it
-		 ("C-x 4 j" . buf-move-left) ; swap buffer that has point with buffer on its left
-		 ("C-x 4 l" . buf-move-right))) ; swap buffer that has point with buffer on its right
+(use-package zenburn-theme
+  :ensure t
+  :config
+  (load-theme 'zenburn t))
+
+;; (require 'buffer-move)
+(global-set-key (kbd "C-x 4 i") #'buf-move-up) ; swap buffer that has point with buffer above it
+(global-set-key (kbd "C-x 4 k") #'buf-move-down) ; swap buffer that has point with buffer below it
+(global-set-key (kbd "C-x 4 j") #'buf-move-left) ; swap buffer that has point with buffer on its left
+(global-set-key (kbd "C-x 4 l") #'buf-move-right) ; swap buffer that has point with buffer on its right
 
 (use-package default-text-scale
+  :ensure t
   :config (default-text-scale-mode))
 
 (use-package ibuffer
+  :ensure t
   :bind (("C-x C-b" . #'ibuffer)))
 
 (use-package ksm-window
-  ;; :load-path "lisp"
   :bind (("C-x j" . ksm/window-config-restore) ; jump to window configuration from hash
 		 ("C-x p" . ksm/window-config-save) ; save window configuration to hash
 		 ("C-x 0" . ksm/delete-window)		; extension to existing behavior
@@ -179,6 +192,7 @@
 		 ("M-p" . scroll-n-lines-backward)))
 
 (use-package switch-window
+  :ensure t
   :bind (("C-x q" . switch-window) ; like tmux C-z q, but only shows numbers to select when more than two windows
 		 ;; ("C-x 0" . switch-window-then-delete)
 		 ;; ("C-x 1" . switch-window-then-maximize) ; like tmux C-z 1, but without the ability to toggle
@@ -234,14 +248,18 @@
 
 ;; company -- complete anything
 (use-package company
-  :hook prog-mode)
+  :ensure t
+  :hook (prog-mode text-mode))
 
 (use-package copy-and-comment
   :bind ("<f8>" . copy-and-comment))
 
 (use-package empty-string)
 
-(use-package find-file-dynamic)
+(use-package find-file-dynamic
+  :after find-file-in-repository)
+
+(use-package ksm-list)
 
 (use-package make-shebang-executable)
 
@@ -251,6 +269,7 @@
   (if (not cmd)
 	  (global-set-key (kbd "C-x C-r") #'rgrep)
 	(use-package deadgrep
+	  :ensure t
 	  :bind (("C-x C-r" . deadgrep)))))
 
 (use-package sort-commas)
@@ -268,6 +287,7 @@
 ;; (require 'org-mode-begin-src)
 
 (use-package org
+  :ensure t
   :after empty-string
 
   :bind (("C-c a" . org-agenda)
@@ -375,6 +395,7 @@ If there is no .svn directory, examine if there is CVS and run
 
 (use-package flycheck
   :defer t
+  :ensure t
   :config
   (global-flycheck-mode)
   (let ((cmd (executable-find "shellcheck")))
@@ -464,10 +485,15 @@ If there is no .svn directory, examine if there is CVS and run
 	(add-to-list 'compilation-error-regexp-alist 'go-test t)
 	(add-to-list 'compilation-error-regexp-alist 'go-panic t))
 
-  :mode ("\\.go\\'"))
+  :mode "\\.go\\'")
 
 (require 'setup-javascript-mode)
 (require 'setup-python-mode)
+
+;; (use-package puppet-mode
+;;   :ensure t
+;;   :mode "\\.pp\\'")
+
 (require 'setup-ruby-mode)
 (require 'setup-rust-mode)
 (require 'setup-zig-mode)
@@ -586,6 +612,8 @@ If there is no .svn directory, examine if there is CVS and run
 ;; 99 Custom Set Variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; buffer-move company deadgrep default-text-scale fic-mode find-file-in-repository flycheck gnu-elpa-keyring-update highlight-indent-guides jenkinsfile-mode js2-mode json-mode just-mode lsp-pyright lsp-ui markdown-mode nginx-mode nov projectile puppet-mode rust-mode rustic switch-window system-packages tree-sitter tree-sitter-indent tree-sitter-ispell tree-sitter-langs vc-fossil vterm which-key xterm-color yaml-mode zenburn-theme zig-mode
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -597,9 +625,6 @@ If there is no .svn directory, examine if there is CVS and run
  '(compilation-environment '("TERM=xterm-256color"))
  '(compilation-scroll-output 'first-error)
  '(confirm-kill-emacs 'yes-or-no-p)
- '(custom-enabled-themes '(zenburn))
- '(custom-safe-themes
-   '("f366d4bc6d14dcac2963d45df51956b2409a15b770ec2f6d730e73ce0ca5c8a7" "5d966953e653a8583b3ad630d15f8935e9077f7fbfac456cb638eedad62f4480" "2dc03dfb67fbcb7d9c487522c29b7582da20766c9998aaad5e5b63b5c27eec3f" "a3e99dbdaa138996bb0c9c806bc3c3c6b4fd61d6973b946d750b555af8b7555b" "fc48cc3bb3c90f7761adf65858921ba3aedba1b223755b5924398c666e78af8b" "70cfdd2e7beaf492d84dfd5f1955ca358afb0a279df6bd03240c2ce74a578e9e" "9040edb21d65cef8a4a4763944304c1a6655e85aabb6e164db6d5ba4fc494a04" "b77a00d5be78f21e46c80ce450e5821bdc4368abf4ffe2b77c5a66de1b648f10" "78e9a3e1c519656654044aeb25acb8bec02579508c145b6db158d2cfad87c44e" default))
  '(diff-switches "-u")
  '(dired-auto-revert-buffer t)
  '(dired-listing-switches "-AbFhl")
@@ -622,10 +647,11 @@ If there is no .svn directory, examine if there is CVS and run
  '(package-archive-priorities '(("melpa-stable" . 2) ("melpa" . 1) ("gnu" . 0)))
  '(package-archives
    '(("gnu" . "https://elpa.gnu.org/packages/")
+	 ("nongnu" . "https://elpa.nongnu.org/nongnu/")
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(buffer-move company deadgrep default-text-scale fic-mode find-file-in-repository flycheck gnu-elpa-keyring-update highlight-indent-guides jenkinsfile-mode js2-mode json-mode just-mode lsp-pyright lsp-ui markdown-mode nginx-mode nov projectile puppet-mode rust-mode rustic switch-window system-packages tree-sitter tree-sitter-indent tree-sitter-ispell tree-sitter-langs vc-fossil vterm which-key xterm-color yaml-mode zenburn-theme zig-mode))
+   '(python-black puppet-mode zenburn-theme which-key switch-window rustic pyvenv lsp-pyright go-mode flycheck default-text-scale deadgrep company))
  '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
