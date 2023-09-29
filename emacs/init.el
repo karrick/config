@@ -158,11 +158,12 @@
   :config
   (load-theme 'zenburn t))
 
-;; (require 'buffer-move)
-(global-set-key (kbd "C-x 4 i") #'buf-move-up) ; swap buffer that has point with buffer above it
-(global-set-key (kbd "C-x 4 k") #'buf-move-down) ; swap buffer that has point with buffer below it
-(global-set-key (kbd "C-x 4 j") #'buf-move-left) ; swap buffer that has point with buffer on its left
-(global-set-key (kbd "C-x 4 l") #'buf-move-right) ; swap buffer that has point with buffer on its right
+(use-package buffer-move
+  :ensure t
+  :bind (("C-x 4 i" . buf-move-up) ; swap buffer that has point with buffer above it
+		 ("C-x 4 k" . buf-move-down) ; swap buffer that has point with buffer below it
+		 ("C-x 4 j" . buf-move-left) ; swap buffer that has point with buffer on its left
+		 ("C-x 4 l" . buf-move-right))) ; swap buffer that has point with buffer on its right
 
 (use-package default-text-scale
   :ensure t
@@ -651,7 +652,7 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(python-black puppet-mode zenburn-theme which-key switch-window rustic pyvenv lsp-pyright go-mode flycheck default-text-scale deadgrep company))
+   '(buffer-move python-black puppet-mode zenburn-theme which-key switch-window rustic pyvenv lsp-pyright go-mode flycheck default-text-scale deadgrep company))
  '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
