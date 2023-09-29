@@ -2,13 +2,13 @@
 *.html
 *~
 .lsp-session-v1
-.lsp-session-v1
 .mc-lists.el
 ac-comphist.dat
 auto-save-list
 cert
 eln-cache
 elpa
+elpy
 eshell
 ido.last
 localhost.el
