@@ -4,20 +4,18 @@
 
 ;;; Code:
 
-;; (require 'deadgrep)
-
 (defun hrg (search-term)
   "Search command history directory for SEARCH-TERM."
   (interactive "sSearch term: ")
   (let ((directory (file-name-concat (or
-				      (getenv "XDG_STATE_HOME")
-				      (expand-file-name "~/.local/state"))
-				     "history")))
-    (if (file-directory-p directory)
-	(if (featurep 'deadgrep)
-	    (deadgrep search-term directory)
-	  (message "Cannot use deadgrep feature"))
-      (message "Cannot find history directory: %s" directory))))
+									  (getenv "XDG_STATE_HOME")
+									  (expand-file-name "~/.local/state"))
+									 "history")))
+	(if (file-directory-p directory)
+		(if (featurep 'deadgrep)
+			(deadgrep search-term directory)
+		  (message "Cannot use deadgrep feature"))
+	  (message "Cannot find history directory: %s" directory))))
 
 (provide 'hrg)
 
