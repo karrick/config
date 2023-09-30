@@ -153,11 +153,6 @@
 									  system-name))
 						   " - Emacs"))
 
-(use-package zenburn-theme
-  :ensure t
-  :config
-  (load-theme 'zenburn t))
-
 (use-package buffer-move
   :ensure t
   :bind (("C-x 4 i" . buf-move-up) ; swap buffer that has point with buffer above it
@@ -168,6 +163,9 @@
 (use-package default-text-scale
   :ensure t
   :config (default-text-scale-mode))
+
+(use-package emacs
+  :bind ("C-x C-n" . other-window))
 
 (use-package ibuffer
   :ensure t
@@ -183,8 +181,6 @@
 		 ("C-x -" . ksm/window-zoom-out) ; pop and restore window configuration from stack
 		 ("C-x +" . ksm/window-zoom-in) ; push window configuration to stack and delete other windows
 		 ("C-x C-p" . other-window-backward)))
-
-;; (global-set-key "\C-x\C-n" 'other-window)
 
 (use-package ksm-window-scrolling
   :bind (("M-N" . ksm/forward-line-scroll-up)
@@ -219,6 +215,11 @@
 
 (use-package window
   :bind ("C-x =" . #'balance-windows))
+
+(use-package zenburn-theme
+  :ensure t
+  :config
+  (load-theme 'zenburn t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 30 MISCELLANEOUS
