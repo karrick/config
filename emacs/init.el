@@ -95,10 +95,9 @@
 
 ;; On machines that do not have GNU version of `ls(1)` command, use a
 ;; substitute written in Elisp.
-(when nil
-  (unless (memq system-type '(gnu gnu/linux gnu/kfreebsd))
-	(require 'ls-lisp)
-	(ls-lisp-use-insert-directory-program nil "TODO confusing documentation...")))
+(unless (memq system-type '(gnu gnu/linux gnu/kfreebsd))
+  (setq ls-lisp-use-insert-directory-program nil)
+  (require 'ls-lisp))
 
 ;; On Windows prefer using `plink.exe` program for TRAMP connections.
 (when (and (eq system-type 'windows-nt) (executable-find "plink"))
