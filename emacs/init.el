@@ -13,6 +13,7 @@
 		use-package-expand-minimally nil
 		use-package-compute-statistics t
 		debug-on-error t)
+
   (if (and (fboundp 'native-comp-available-p)
 		   (native-comp-available-p))
 	  (message "Native compilation is available")
@@ -517,12 +518,6 @@ If there is no .svn directory, examine if there is CVS and run
 ;; 60 KEYS -- any additional key bindings not covered above
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(global-unset-key (kbd "C-z")) ; disable suspend-frame
-(global-unset-key (kbd "s-p")) ; disable prompt to print a buffer
-(global-unset-key (kbd "s-q")) ; disable abrupt Emacs exit
-(global-unset-key (kbd "s-t")) ; disable ns-popup-font-panel
-(global-unset-key (kbd "s-z")) ; disable minimize
-
 (global-set-key (kbd "C-x C-b") #'ibuffer)
 
 (require 'compile)
@@ -533,6 +528,16 @@ If there is no .svn directory, examine if there is CVS and run
 (global-set-key (kbd "<f10>") #'revert-buffer)
 
 ;; (define-key grep-mode-map (kbd "C-x C-q") #'wgrep-change-to-wgrep-mode)
+
+;;; The following key-bindings (shown along with their default functions)
+;;; below are disabled:
+(global-unset-key (kbd "C-z")) ; suspend-frame
+(global-unset-key (kbd "s-m")) ; iconify-frame
+(global-unset-key (kbd "s-p")) ; ns-print-buffer
+(global-unset-key (kbd "s-q")) ; save-buffers-kill-emacs
+(global-unset-key (kbd "s-s")) ; save-buffer
+(global-unset-key (kbd "s-t")) ; menu-set-font
+(global-unset-key (kbd "s-z")) ; undo
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 70 Sort
