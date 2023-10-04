@@ -47,7 +47,7 @@ case $_SHELL in
 				;;
 			color)
 				PS1="\[\e[2m\]# FINISH: \D{%F}T\A\[\e[22m\]\n[\[\$( _code=\$? ; if [ \$_code -eq 0 ] ; then echo \"\\e[32m\$_code\e[39m\" ; else echo \"\e[1;31m\$_code\e[22;39m\" ; fi )\]] \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\] \$ "
-				;;								
+				;;
 			fancy)
 				if [ -n "$HOSTPROMPT" ] ; then
 					PS1="\[\e[2m\]# FINISH: \D{%F}T\A\[\e[22m\]\n[\[\$( _code=\$? ; if [ \$_code -eq 0 ] ; then echo \"\\e[32m\$_code\e[39m\" ; else echo \"\e[1;31m\$_code\e[22;39m\" ; fi )\]] \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]${HOSTPROMPT}\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]"
@@ -97,38 +97,38 @@ unalias rm 2>/dev/null || :
 unalias cp 2>/dev/null || :
 unalias mv 2>/dev/null || :
 
-[ "$shell" = "sh" ] || hrg() { (cd ~/.history.d && exec rg "$*" ) }
+[ "$_SHELL" = "sh" ] || hrg() { ( cd ~/.history.d && exec rg "$*" ) }
 
-dos2unix () { tr -d '\r' <"$1" >"$2" }
-mac2unix () { tr '\r' '\n' <"$1" >"$2" }
-unix2mac () { tr '\n' '\r' <"$1" >"$2" }
-unix2dos () { ruby -pe '$_=$_.gsub(/$/, "\r")' <$1 >$2 }
+dos2unix () { tr -d '\r' <"$1" >"$2" ; }
+mac2unix () { tr '\r' '\n' <"$1" >"$2" ; }
+unix2mac () { tr '\n' '\r' <"$1" >"$2" ; }
+unix2dos () { ruby -pe '$_=$_.gsub(/$/, "\r")' <$1 >$2 ; }
 
 hexl() { local file=$1 ; emacs -q -nw --eval "(hexl-find-file \"$file\")" ; }
 
-set_gnu_screen_hardstatus_line () { printf "\e_$*\e\\" }
-set_gnu_screen_window_title () { printf "\ek$*\e\\" }
-set_xterm_window_title () { printf "\e]0;$*\007" }
+set_gnu_screen_hardstatus_line () { printf "\e_$*\e\\" ; }
+set_gnu_screen_window_title () { printf "\ek$*\e\\" ; }
+set_xterm_window_title () { printf "\e]0;$*\007" ; }
 
 set_title ()
 {
-    local title=$1
-    case $TERM in
-	xterm* | gnome* | vt100 | rxvt)
-	    # append cwd enclosed in parens
-	    set_xterm_window_title "$title ($(pwd))"
-	    ;;
-	screen)
-	    # use extra hardstatus line for dirs, instead of combining
-	    set_gnu_screen_hardstatus_line "$(dirs)"
-	    set_gnu_screen_window_title "$title"
-	    ;;
-	*)
-	    ;;
-    esac
+	local title=$1
+	case $TERM in
+		xterm* | gnome* | vt100 | rxvt)
+			# append cwd enclosed in parens
+			set_xterm_window_title "$title ($(pwd))"
+			;;
+		screen)
+			# use extra hardstatus line for dirs, instead of combining
+			set_gnu_screen_hardstatus_line "$(dirs)"
+			set_gnu_screen_window_title "$title"
+			;;
+		*)
+			;;
+	esac
 }
+
+[ ! -r "$HOME/.cargo/env" ] || . "$HOME/.cargo/env"
 
 # [ "$_SHELL" != "sh" -a "$TERM" != "dumb" ] && which starship >/dev/null 2>&1 && eval "$(starship init $_SHELL)"
 unset _SHELL
-
-[ ! -r "$HOME/.cargo/env" ] || . "$HOME/.cargo/env"
