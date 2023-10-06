@@ -24,6 +24,7 @@
     editor = emacsclient -a ''
 
 [credential]
+	# helper = osxkeychain
     helper = store
 
 [diff]
