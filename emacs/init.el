@@ -342,7 +342,7 @@
 						("~/gtd/tickler.org" :maxlevel . 2))
 					  "TODO DOCUMENT")
 
-  (org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)"))
+  (org-todo-keywords '((sequence "MAYBE (m)" "TODO(t)" "STARTED(s)" "WAITING(w)" "PR(p)" "|" "MERGED(g)" "DONE(d)" "CANCELLED(c)" "DELEGATED(g)"))
 					 "TODO DOCUMENT"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
