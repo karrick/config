@@ -657,7 +657,7 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(buffer-move python-black puppet-mode zenburn-theme which-key switch-window rustic pyvenv lsp-pyright go-mode flycheck default-text-scale deadgrep company))
+   '(buffer-move company deadgrep default-text-scale flycheck go-mode lsp-pyright puppet-mode python-black pyvenv rustic switch-window vterm which-key zenburn-theme))
  '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
