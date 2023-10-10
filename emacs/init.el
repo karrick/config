@@ -17,7 +17,7 @@
   (if (and (fboundp 'native-comp-available-p)
 		   (native-comp-available-p))
 	  (message "Native compilation is available")
-	(message "Native complation is *not* available"))
+	(message "Native compilation is *not* available"))
 
   (if (and (functionp 'json-serialize) (json-serialize nil))
 	  (message "Native JSON is available")
