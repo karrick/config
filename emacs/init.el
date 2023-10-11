@@ -311,6 +311,7 @@
   (define-key org-mode-map (kbd "C-c l") #'org-store-link)
 
   (add-hook 'org-mode-hook #'(lambda ()
+							   (visual-line-mode)
 							   (local-set-key (kbd "C-c l") 'org-store-link)))
   :custom
 
