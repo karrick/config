@@ -2,13 +2,11 @@
 
 ;;; Code:
 
-(use-package lsp-pyright
+(use-package emacs
   :ensure t
   :hook (python-mode . (lambda ()
 						 (setq indent-tabs-mode nil
-							   tab-width 4)
-						 (require 'lsp-pyright)
-						 (lsp))))		; or lsp-deferred
+							   tab-width 4))))
 
 (use-package python-black
   :after python
@@ -17,7 +15,15 @@
   :when (executable-find "black")
   :hook (python-mode . python-black-on-save-mode-enable-dwim))
 
+(use-package lsp-pyright
+  :disabled
+  :ensure t
+  :hook (python-mode . (lambda ()
+						 (require 'lsp-pyright)
+						 (lsp))))		; or lsp-deferred
+
 (use-package pyvenv
+  :disabled
   :ensure t
   :hook (python-mode . pyvenv-mode)
 
