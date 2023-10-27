@@ -216,6 +216,45 @@
 (use-package window
   :bind ("C-x =" . #'balance-windows))
 
+;; xterm-color is superior to ansi-color
+;; (https://github.com/atomontage/xterm-color)
+(use-package xterm-color
+  :ensure t
+
+  :config
+  (setenv "TERM" "xterm-256color")
+
+  ;; compilation buffers
+  (setq compilation-environment '("TERM=xterm-256color"))
+  (defun my/advice-compilation-filter (f proc string)
+	"Convert ANSI color sequences appended to compilation buffer to Emacs text properties."
+	(funcall f proc (xterm-color-filter string)))
+  (advice-add 'compilation-filter :around #'my/advice-compilation-filter)
+
+  ;; eshell mode
+  (with-eval-after-load 'esh-mode
+	(add-hook 'eshell-before-prompt-hook
+			  #'(lambda ()
+				  (setq xterm-color-preserve-properties t)))
+	(add-to-list 'eshell-preoutput-filter-functions 'xterm-color-filter)
+	(setq eshell-output-filter-functions
+		  (remove 'eshell-handle-ansi-color eshell-output-filter-functions)))
+
+  ;; shell mode
+  (setq comint-output-filter-functions
+		(remove 'ansi-color-process-output comint-output-filter-functions))
+  (add-hook 'shell-mode-hook
+			#'(lambda ()
+				;; Disable font-locking in this buffer to improve
+				;; performance
+				(font-lock-mode 0)
+				;; Prevent font-locking from being re-enabled in
+				;; this buffer
+				(make-local-variable 'font-lock-function)
+				(setq font-lock-function (lambda (_) nil))
+				;; Add xterm-color hook
+				(add-hook 'comint-preoutput-filter-functions 'xterm-color-filter nil t))))
+
 (use-package zenburn-theme
   :ensure t
   :config
@@ -543,40 +582,6 @@ If there is no .svn directory, examine if there is CVS and run
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 70 Sort
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;
-;; xterm-color is superior to ansi-color
-;;
-
-;; compilation buffers
-(defun my/advice-compilation-filter (f proc string)
-  "Transform ANSI sequences in string to Emacs face."
-  (funcall f proc (xterm-color-filter string)))
-(advice-add 'compilation-filter :around #'my/advice-compilation-filter)
-
-;; shell mode
-(setq comint-output-filter-functions
-	  (remove 'ansi-color-process-output comint-output-filter-functions))
-(add-hook 'shell-mode-hook
-		  #'(lambda ()
-			  ;; Disable font-locking in this buffer to improve
-			  ;; performance
-			  (font-lock-mode 0)
-			  ;; Prevent font-locking from being re-enabled in
-			  ;; this buffer
-			  (make-local-variable 'font-lock-function)
-			  (setq font-lock-function (lambda (_) nil))
-			  ;; Add xterm-color hook
-			  (add-hook 'comint-preoutput-filter-functions 'xterm-color-filter nil t)))
-
-;; eshell mode
-(with-eval-after-load 'esh-mode
-  (add-hook 'eshell-before-prompt-hook
-			#'(lambda ()
-				(setq xterm-color-preserve-properties t)))
-  (add-to-list 'eshell-preoutput-filter-functions 'xterm-color-filter)
-  (setq eshell-output-filter-functions (remove 'eshell-handle-ansi-color eshell-output-filter-functions))
-  (setenv "TERM" "xterm-256color"))
 
 (use-package expand-region
   :disabled
