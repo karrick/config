@@ -102,13 +102,13 @@ unalias mv 2>/dev/null || :
 dos2unix () { tr -d '\r' <"$1" >"$2" ; }
 mac2unix () { tr '\r' '\n' <"$1" >"$2" ; }
 unix2mac () { tr '\n' '\r' <"$1" >"$2" ; }
-unix2dos () { ruby -pe '$_=$_.gsub(/$/, "\r")' <$1 >$2 ; }
+unix2dos () { ruby -pe '$_=$_.gsub(/$/, "\r")' <"$1" >"$2" ; }
 
 hexl() { local file=$1 ; emacs -q -nw --eval "(hexl-find-file \"$file\")" ; }
 
-set_gnu_screen_hardstatus_line () { printf "\e_$*\e\\" ; }
-set_gnu_screen_window_title () { printf "\ek$*\e\\" ; }
-set_xterm_window_title () { printf "\e]0;$*\007" ; }
+set_gnu_screen_hardstatus_line () { printf "\e_%s\e\\" "$*"; }
+set_gnu_screen_window_title () { printf "\ek%s\e\\" "$*"; }
+set_xterm_window_title () { printf "\e]0;%s\007" "$*"; }
 
 set_title ()
 {
