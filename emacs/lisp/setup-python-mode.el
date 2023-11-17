@@ -33,7 +33,7 @@
   :hook (python-mode . pyvenv-mode)
 
   :config
-  (when t (pyvenv-mode t))
+  (pyvenv-mode t)
   (setq pyvenv-post-activation-hooks
 		(list (lambda ()
 				(setq python-shell-interpreter (concat pyvenv-virtual-env "bin/python3")))))
