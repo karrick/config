@@ -264,7 +264,7 @@
 ;; 30 MISCELLANEOUS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(use-package align)
+(use-package ksm-align)
 
 ;; aspell
 (let ((cmd (executable-find "aspell")))
@@ -532,9 +532,9 @@ If there is no .svn directory, examine if there is CVS and run
 (require 'setup-javascript-mode)
 (require 'setup-python-mode)
 
-;; (use-package puppet-mode
-;;   :ensure t
-;;   :mode "\\.pp\\'")
+(use-package puppet-mode
+  :ensure t
+  :mode "\\.pp\\'")
 
 (require 'setup-ruby-mode)
 (require 'setup-rust-mode)
