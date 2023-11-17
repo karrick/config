@@ -2,16 +2,14 @@
     br = branch
     ci = commit
     co = checkout
-	glog = --oneline --decorate --graph
+    glog = --oneline --decorate --graph
     hl = log --date=short --graph --pretty='tformat:%C(auto)%d%h: %an %ad% s'
-#    revert = checkout --
     st = status
-#    unstage = reset HEAD
 
 # Automatic `git config branch.BRANCHNAME.rebase true` on new branches/repos
 # Changes default `git pull` to `git pull --rebase`
 [branch]
-	 autosetuprebase = always
+    autosetuprebase = always
 
 [color]
     branch = auto
@@ -24,11 +22,10 @@
     editor = emacsclient -a ''
 
 [credential]
-	# helper = osxkeychain
     helper = store
 
 [diff]
-	submodule = log
+    submodule = log
 
 [fetch]
     prune = true
@@ -47,7 +44,7 @@
     autoStash = true
 
 [rerere]
-	enabled = true
+    enabled = true
 
 [user]
     name = Karrick S. McDermott
