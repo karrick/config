@@ -20,7 +20,10 @@
   :hook (python-mode . python-black-on-save-mode-enable-dwim))
 
 (use-package lsp-pyright
+  :disabled
   :ensure t
+  :custom
+  (lsp-pyright-python-executable-cmd "python3")
   :hook (python-mode . (lambda ()
 						 (require 'lsp-pyright)
 						 (lsp))))		; or lsp-deferred
