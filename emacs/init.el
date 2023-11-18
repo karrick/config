@@ -290,7 +290,7 @@
 ;; company -- complete anything
 (use-package company
   :after eglot
-  :hook (prog-mode text-mode)			; consider adding: eglot-managed-mode
+  :hook (eglot-managed-mode prog-mode text-mode)
   :ensure t)
 
 (use-package copy-and-comment
@@ -449,6 +449,13 @@ If there is no .svn directory, examine if there is CVS and run
 (global-set-key (kbd "C-x $") #'aj-toggle-fold)
 
 (use-package eglot
+  :after yasnippet
+
+  :bind (:map eglot-mode-map
+			  ("C-c h" . eldoc)
+			  ("C-c o" . eglot-code-action-organize-imports)
+			  ("C-c r" . eglot-rename))
+
   ;; See the eglot-server-programs variable, in addition to:
   ;; https://github.com/joaotavora/eglot#connecting-to-a-server
   ;;
@@ -477,10 +484,18 @@ If there is no .svn directory, examine if there is CVS and run
 
   :custom
 
-  ;; While the following is not necessary, it is set to non-nil in order to
-  ;; configure eglot to shut down servers when final buffer closed which was
-  ;; using it.
+  ;; While the following configuration option is not necessary, it is set here
+  ;; to non-nil in order to configure eglot to shut down servers when final
+  ;; buffer closed for which each respective server was supporting.
   (eglot-autoshutdown t)
+
+  ;; The following configuration lines were required for lsp-mode, and might
+  ;; be needed for eglot, because they both do the same thing with the same
+  ;; JSON protocol. However, I am leaving them disabled for the time being,
+  ;; until I see that they are in-fact required for eglot operation.
+  ;;
+  ;; (gc-cons-threshold 1000000 "1 million")
+  ;; (read-process-output-max (* 4 1024 1024) "4 MiB to handle larger payloads from LISP.")
 
   :ensure t)
 
@@ -497,8 +512,8 @@ If there is no .svn directory, examine if there is CVS and run
 
 (use-package lsp-mode
   :disabled
+  ;; :ensure t
   :after which-key
-  :ensure t
 
   :init
   ;; Empirically discovered that lsp-keymap-prefix must be set before loading
@@ -522,9 +537,8 @@ If there is no .svn directory, examine if there is CVS and run
 (require 'setup-elisp-mode)
 
 (use-package go-mode
+  :after eglot
   :mode "\\.go\\'"
-  ;; :after lsp-mode
-  ;; :after eglot
 
   :config
 
@@ -554,7 +568,9 @@ If there is no .svn directory, examine if there is CVS and run
 							  (executable-find "gofmt")))
 	  (add-hook 'go-mode-hook
 				#'(lambda ()
-					(add-hook 'before-save-hook #'gofmt-before-save nil t)))))
+					(if (functionp 'eglot-format-buffer)
+						(add-hook 'before-save-hook #'eglot-format-buffer nil t)
+					  (add-hook 'before-save-hook #'gofmt-before-save nil t))))))
 
 	(when nil
 	  ;; Fix parsing of error and warning lines in compiler output.
@@ -596,6 +612,9 @@ If there is no .svn directory, examine if there is CVS and run
 	(cond
 	 (nil (global-set-key (kbd "C-x C-s") #'tree-sitter-ispell-run-at-point))
 	 (nil (global-set-key (kbd "C-x C-s") #'tree-sitter-ispell-run-buffer)))))
+
+(use-package yasnippet
+  :ensure t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 60 KEYS -- any additional key bindings not covered above
@@ -705,7 +724,7 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(eglot buffer-move company deadgrep default-text-scale flycheck go-mode lsp-pyright puppet-mode python-black pyvenv rustic switch-window vterm which-key zenburn-theme))
+   '(yasnippet eglot buffer-move company deadgrep default-text-scale flycheck go-mode puppet-mode python-black pyvenv rustic switch-window which-key zenburn-theme))
  '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
