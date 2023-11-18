@@ -9,19 +9,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (when init-file-debug
-  (setq use-package-verbose t
-		use-package-expand-minimally nil
-		use-package-compute-statistics t
-		debug-on-error t)
-
-  (if (and (fboundp 'native-comp-available-p)
+  (if (and (functionp 'native-comp-available-p)
 		   (native-comp-available-p))
 	  (message "Native compilation is available")
 	(message "Native compilation is *not* available"))
 
-  (if (and (functionp 'json-serialize) (json-serialize nil))
+  (if (and (functionp 'json-serialize)
+		   (json-serialize nil))
 	  (message "Native JSON is available")
-	(message "Native JSON is *not* available")))
+	(message "Native JSON is *not* available"))
+
+  (setq use-package-verbose t
+		use-package-expand-minimally nil
+		use-package-compute-statistics t
+		debug-on-error t))
 
 (setq package-archives
 	  '(("gnu" . "https://elpa.gnu.org/packages/")
