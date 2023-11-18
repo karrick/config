@@ -173,7 +173,7 @@
 
 (use-package ksm-window
   :bind (("C-x j" . ksm/window-config-restore) ; jump to window configuration from hash
-		 ("C-x p" . ksm/window-config-save) ; save window configuration to hash
+		 ;; ("C-x p" . ksm/window-config-save) ; save window configuration to hash
 		 ("C-x 0" . ksm/delete-window)		; extension to existing behavior
 		 ("C-x 1" . ksm/delete-other-windows) ; extension to existing behavior
 		 ;; ("C-x 2" . split-window-below) ; this is the default key binding
