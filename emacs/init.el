@@ -289,8 +289,9 @@
 
 ;; company -- complete anything
 (use-package company
-  :ensure t
-  :hook (prog-mode text-mode))
+  :after eglot
+  :hook (prog-mode text-mode)			; consider adding: eglot-managed-mode
+  :ensure t)
 
 (use-package copy-and-comment
   :bind ("<f8>" . copy-and-comment))
@@ -310,13 +311,25 @@
   (if (not cmd)
 	  (global-set-key (kbd "C-x C-r") #'rgrep)
 	(use-package deadgrep
-	  :ensure t
-	  :bind (("C-x C-r" . deadgrep)))))
+	  :bind (("C-x C-r" . deadgrep))
+	  :ensure t)))
 
 (use-package sort-commas)
 
 (use-package unfill-paragraph
   :bind ("M-Q" . unfill-paragraph))
+
+(use-package dictionary
+  ;; https://www.masteringemacs.org/article/wordsmithing-in-emacs
+  :bind ("M-#" . dictionary-lookup-definition)
+
+  :custom (dictionary-server "dict.org")
+
+  :config
+  (add-to-list 'display-buffer-alist
+			   '("^\\*Dictionary\\*" display-buffer-in-side-window
+				 (side . left)
+				 (window-width . 50))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 40 ORG
@@ -435,6 +448,42 @@ If there is no .svn directory, examine if there is CVS and run
 	   (if selective-display nil (or col 1))))))
 (global-set-key (kbd "C-x $") #'aj-toggle-fold)
 
+(use-package eglot
+  ;; See the eglot-server-programs variable, in addition to:
+  ;; https://github.com/joaotavora/eglot#connecting-to-a-server
+  ;;
+  ;;   * bash-language-server & shellcheck
+  ;;   * gopls
+  ;;   * jedi-language-server (or pylsp, pyls, pyright) (for python)
+  ;;   * rust-analyzer
+  ;;   * typescript-language-server (also used for js modes)
+  ;;   * yaml-language-server
+  ;;   * zls (for zig)
+
+  :hook
+  (
+   (
+	bash-ts-mode sh-mode
+	go-mode go-dot-mod-mode go-dot-work-mode go-ts-mode go-mod-ts-mode
+	;; js-mode js-ts-mode
+	python-mode
+	rust-ts-mode rust-mode
+	;; tsx-ts-mode typescript-ts-mode typescript-mode
+	;; yaml-ts-mode yaml-mode
+	;; zig-mode
+	)
+   . eglot-ensure
+   )
+
+  :custom
+
+  ;; While the following is not necessary, it is set to non-nil in order to
+  ;; configure eglot to shut down servers when final buffer closed which was
+  ;; using it.
+  (eglot-autoshutdown t)
+
+  :ensure t)
+
 (use-package flycheck
   :defer t
   :ensure t
@@ -447,6 +496,7 @@ If there is no .svn directory, examine if there is CVS and run
 	  (add-hook 'sh-mode-hook 'flycheck-mode))))
 
 (use-package lsp-mode
+  :disabled
   :after which-key
   :ensure t
 
@@ -459,8 +509,9 @@ If there is no .svn directory, examine if there is CVS and run
   ;; ("C-x 4 M-." . xref-find-definitions-other-window)
 
   :custom
-  (read-process-output-max (* 4 1024 1024) "4 MiB to handle larger payloads from LISP.")
   (gc-cons-threshold 1000000 "1 million")
+  (lsp-enable-snippet nil)
+  (read-process-output-max (* 4 1024 1024) "4 MiB to handle larger payloads from LISP.")
 
   :config
   (when (featurep 'which-key)
@@ -471,73 +522,65 @@ If there is no .svn directory, examine if there is CVS and run
 (require 'setup-elisp-mode)
 
 (use-package go-mode
-  :after lsp-mode
-  :ensure t
+  :mode "\\.go\\'"
+  ;; :after lsp-mode
+  ;; :after eglot
 
   :config
 
-  ;; Use gogetdoc as it provides better documentation.
-  (when (executable-find "gogetdoc")
-	(setq godoc-at-point-function #'godoc-gogetdoc))
+  (progn
+	(cond
+	 ((and nil (featurep 'lsp-mode))
+	  (lsp-register-custom-settings
+	   '(("gopls.completeUnimported" t t)
+		 ("gopls.staticcheck" t t)
+		 ("gopls.usePlaceholders" t t)))
+	  ;; Set up before-save hooks to format buffer and add modify
+	  ;; imports. Ensure there is not another gofmt(1) or goimports(1) hook
+	  ;; enabled.
+	  (defun lsp-go-install-save-hooks ()
+		(add-hook 'before-save-hook #'lsp-format-buffer t t)
+		(add-hook 'before-save-hook #'lsp-organize-imports t t))
+	  (add-hook 'go-mode-hook #'lsp-go-install-save-hooks)
+	  (add-hook 'go-mode-hook #'lsp))
+	 (t
+	  ;; Use gogetdoc as it provides better documentation than godoc and
+	  ;; godef.
+	  (when (executable-find "gogetdoc")
+		(setq godoc-at-point-function #'godoc-gogetdoc))
 
-  (let ((cmd (executable-find "gopls")))
-	(if cmd
-		(progn
-		  (lsp-register-custom-settings
-		   '(("gopls.completeUnimported" t t)
-			 ("gopls.staticcheck" t t)
-			 ("gopls.usePlaceholders" t t)))
+	  ;; Prefer goimports, but when not found, use gofmt.
+	  (setq gofmt-command (or (executable-find "goimports")
+							  (executable-find "gofmt")))
+	  (add-hook 'go-mode-hook
+				#'(lambda ()
+					(add-hook 'before-save-hook #'gofmt-before-save nil t)))))
 
-		  ;; When gopls language server is found, install hooks for go-mode to
-		  ;; use it.
-		  (when (featurep 'lsp-mode)
-			(setq lsp-go-gopls-server-path cmd))
+	(when nil
+	  ;; Fix parsing of error and warning lines in compiler output.
+	  (setq compilation-error-regexp-alist-alist ; first remove the standard conf; it's not good.
+			(remove 'go-panic
+					(remove 'go-test compilation-error-regexp-alist-alist)))
+	  ;; Make another one that works better and strips more space at the beginning.
+	  (add-to-list 'compilation-error-regexp-alist-alist
+				   '(go-test . ("^[[:space:]]*\\([_a-zA-Z./][_a-zA-Z0-9./]*\\):\\([0-9]+\\):.*$" 1 2)))
+	  (add-to-list 'compilation-error-regexp-alist-alist
+				   '(go-panic . ("^[[:space:]]*\\([_a-zA-Z./][_a-zA-Z0-9./]*\\):\\([0-9]+\\)[[:space:]].*$" 1 2)))
+	  ;; override.
+	  (add-to-list 'compilation-error-regexp-alist 'go-test t)
+	  (add-to-list 'compilation-error-regexp-alist 'go-panic t)))
 
-		  ;; Set up before-save hooks to format buffer and add modify
-		  ;; imports. Ensure there is not another gofmt(1) or goimports(1)
-		  ;; hook enabled.
-		  (defun lsp-go-install-save-hooks ()
-			(add-hook 'before-save-hook #'lsp-format-buffer t t)
-			(add-hook 'before-save-hook #'lsp-organize-imports t t))
-
-		  (add-hook 'go-mode-hook #'lsp-go-install-save-hooks)
-		  (add-hook 'go-mode-hook #'lsp))
-	  (progn
-		;; When cannot find gopls language server, configure a
-		;; different go-mode-hook for graceful feature degredation.
-
-		;; Prefer goimports, but when not found, use gofmt.
-		(setq gofmt-command (or (executable-find "goimports")
-								(executable-find "gofmt")))
-		(add-hook 'go-mode-hook
-				  #'(lambda ()
-					  (add-hook 'before-save-hook #'gofmt-before-save nil t))))))
-
-  (when nil
-	;; Fix parsing of error and warning lines in compiler output.
-	(setq compilation-error-regexp-alist-alist ; first remove the standard conf; it's not good.
-		  (remove 'go-panic
-				  (remove 'go-test compilation-error-regexp-alist-alist)))
-	;; Make another one that works better and strips more space at the beginning.
-	(add-to-list 'compilation-error-regexp-alist-alist
-				 '(go-test . ("^[[:space:]]*\\([_a-zA-Z./][_a-zA-Z0-9./]*\\):\\([0-9]+\\):.*$" 1 2)))
-	(add-to-list 'compilation-error-regexp-alist-alist
-				 '(go-panic . ("^[[:space:]]*\\([_a-zA-Z./][_a-zA-Z0-9./]*\\):\\([0-9]+\\)[[:space:]].*$" 1 2)))
-	;; override.
-	(add-to-list 'compilation-error-regexp-alist 'go-test t)
-	(add-to-list 'compilation-error-regexp-alist 'go-panic t))
-
-  :mode "\\.go\\'")
+  :ensure t)
 
 (require 'setup-javascript-mode)
 (require 'setup-python-mode)
 
 (use-package puppet-mode
-  :ensure t
-  :mode "\\.pp\\'")
+  :mode "\\.pp\\'"
+  :ensure t)
 
 (require 'setup-ruby-mode)
-(require 'setup-rust-mode)
+;; (require 'setup-rust-mode)
 (require 'setup-zig-mode)
 
 ;; tree-sitter is not yet configured properly.
@@ -648,7 +691,6 @@ If there is no .svn directory, examine if there is CVS and run
  '(highlight-indent-guides-method 'character)
  '(inhibit-startup-screen t)
  '(line-number-mode t)
- '(lsp-enable-snippet nil)
  '(make-backup-files nil)
  '(menu-bar-mode nil)
  '(minibuffer-prompt-properties
@@ -663,7 +705,7 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(buffer-move company deadgrep default-text-scale flycheck go-mode lsp-pyright puppet-mode python-black pyvenv rustic switch-window vterm which-key zenburn-theme))
+   '(eglot buffer-move company deadgrep default-text-scale flycheck go-mode lsp-pyright puppet-mode python-black pyvenv rustic switch-window vterm which-key zenburn-theme))
  '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
