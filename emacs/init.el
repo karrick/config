@@ -19,6 +19,11 @@
 	  (message "Native JSON is available")
 	(message "Native JSON is *not* available"))
 
+  (if (and (functionp 'treesit-available-p)
+		   (treesit-available-p))
+	  (message "tree-sitter is available")
+	(message "tree-sitter is *not* available"))
+
   (setq use-package-verbose t
 		use-package-expand-minimally nil
 		use-package-compute-statistics t
@@ -539,7 +544,8 @@ If there is no .svn directory, examine if there is CVS and run
   :ensure t)
 
 (use-package nix-ts-mode
-  :ensure t)
+  :when (and (functionp 'treesit-available-p)
+			 (treesit-available-p)))
 
 (require 'setup-elisp-mode)
 (require 'setup-golang-mode)
