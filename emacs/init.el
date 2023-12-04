@@ -536,59 +536,7 @@ If there is no .svn directory, examine if there is CVS and run
 (add-hook 'markdown-mode-hook #'visual-line-mode)
 
 (require 'setup-elisp-mode)
-
-(use-package go-mode
-  :after eglot
-  :mode "\\.go\\'"
-
-  :config
-
-  (progn
-	(cond
-	 ((and nil (featurep 'lsp-mode))
-	  (lsp-register-custom-settings
-	   '(("gopls.completeUnimported" t t)
-		 ("gopls.staticcheck" t t)
-		 ("gopls.usePlaceholders" t t)))
-	  ;; Set up before-save hooks to format buffer and add modify
-	  ;; imports. Ensure there is not another gofmt(1) or goimports(1) hook
-	  ;; enabled.
-	  (defun lsp-go-install-save-hooks ()
-		(add-hook 'before-save-hook #'lsp-format-buffer t t)
-		(add-hook 'before-save-hook #'lsp-organize-imports t t))
-	  (add-hook 'go-mode-hook #'lsp-go-install-save-hooks)
-	  (add-hook 'go-mode-hook #'lsp))
-	 (t
-	  ;; Use gogetdoc as it provides better documentation than godoc and
-	  ;; godef.
-	  (when (executable-find "gogetdoc")
-		(setq godoc-at-point-function #'godoc-gogetdoc))
-
-	  ;; Prefer goimports, but when not found, use gofmt.
-	  (setq gofmt-command (or (executable-find "goimports")
-							  (executable-find "gofmt")))
-	  (add-hook 'go-mode-hook
-				#'(lambda ()
-					(if (functionp 'eglot-format-buffer)
-						(add-hook 'before-save-hook #'eglot-format-buffer nil t)
-					  (add-hook 'before-save-hook #'gofmt-before-save nil t))))))
-
-	(when nil
-	  ;; Fix parsing of error and warning lines in compiler output.
-	  (setq compilation-error-regexp-alist-alist ; first remove the standard conf; it's not good.
-			(remove 'go-panic
-					(remove 'go-test compilation-error-regexp-alist-alist)))
-	  ;; Make another one that works better and strips more space at the beginning.
-	  (add-to-list 'compilation-error-regexp-alist-alist
-				   '(go-test . ("^[[:space:]]*\\([_a-zA-Z./][_a-zA-Z0-9./]*\\):\\([0-9]+\\):.*$" 1 2)))
-	  (add-to-list 'compilation-error-regexp-alist-alist
-				   '(go-panic . ("^[[:space:]]*\\([_a-zA-Z./][_a-zA-Z0-9./]*\\):\\([0-9]+\\)[[:space:]].*$" 1 2)))
-	  ;; override.
-	  (add-to-list 'compilation-error-regexp-alist 'go-test t)
-	  (add-to-list 'compilation-error-regexp-alist 'go-panic t)))
-
-  :ensure t)
-
+(require 'setup-golang-mode)
 (require 'setup-javascript-mode)
 (require 'setup-python-mode)
 
@@ -725,7 +673,7 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(yasnippet eglot buffer-move company deadgrep default-text-scale flycheck go-mode puppet-mode python-black pyvenv rustic switch-window which-key zenburn-theme))
+   '(buffer-move company deadgrep default-text-scale flycheck go-mode puppet-mode python-black pyvenv rustic switch-window which-key zenburn-theme))
  '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
@@ -739,8 +687,6 @@ If there is no .svn directory, examine if there is CVS and run
  '(uniquify-buffer-name-style 'post-forward nil (uniquify))
  '(uniquify-ignore-buffers-re "^\\*")
  '(visible-bell t)
- '(vterm-buffer-name-string "*vterm*|%s")
- '(vterm-copy-exclude-prompt nil)
  '(wgrep-auto-save-buffer t))
 
 (custom-set-faces
