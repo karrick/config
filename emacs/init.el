@@ -535,6 +535,12 @@ If there is no .svn directory, examine if there is CVS and run
 
 (add-hook 'markdown-mode-hook #'visual-line-mode)
 
+(use-package nix-mode
+  :ensure t)
+
+(use-package nix-ts-mode
+  :ensure t)
+
 (require 'setup-elisp-mode)
 (require 'setup-golang-mode)
 (require 'setup-javascript-mode)
