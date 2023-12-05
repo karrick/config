@@ -97,7 +97,7 @@ unalias rm 2>/dev/null || :
 unalias cp 2>/dev/null || :
 unalias mv 2>/dev/null || :
 
-[ "$_SHELL" = "sh" ] || hrg() { ( cd ~/.history.d && exec rg "$*" ) }
+[ "$_SHELL" = "sh" ] || hrg() { ( cd "$XDG_STATE_HOME/history" && exec rg "$*" ) }
 
 dos2unix () { tr -d '\r' <"$1" >"$2" ; }
 mac2unix () { tr '\r' '\n' <"$1" >"$2" ; }
