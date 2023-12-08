@@ -17,3 +17,6 @@ emacs/projects
 emacs/session.*
 emacs/tramp
 emacs/url
+git/credentials
+git/credentials.template
+htop/htoprc
