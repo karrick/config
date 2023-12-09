@@ -5,7 +5,7 @@
 ;;; Code:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 00 Process Environment
+;; 00 EARLY INIT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (when init-file-debug
@@ -19,11 +19,6 @@
 	  (message "Native JSON is available")
 	(message "Native JSON is *not* available"))
 
-  (if (and (functionp 'treesit-available-p)
-		   (treesit-available-p))
-	  (message "tree-sitter is available")
-	(message "tree-sitter is *not* available"))
-
   (setq use-package-verbose t
 		use-package-expand-minimally nil
 		use-package-compute-statistics t
@@ -34,6 +29,10 @@
 		("nongnu" . "https://elpa.nongnu.org/nongnu/")
 		("melpa-stable" . "https://stable.melpa.org/packages/")
 		("melpa" . "https://melpa.org/packages/")))
+
+;; When running in daemon mode, change process directory to user home
+;; directory.
+(if (daemonp) (cd (expand-file-name "~")))
 
 ;;; When "cert" file in user-emacs-directory, presumably placed there as a
 ;;; symbolic link to a host-specific yet non-standard system cert file, then
@@ -46,12 +45,26 @@
 	  (when (file-readable-p cert)
 		(add-to-list 'gnutls-trustfiles cert)))))
 
-;; When running in daemon mode, change process directory to user home
-;; directory.
-(if (daemonp) (cd (expand-file-name "~")))
+;; On machines that do not have GNU version of `ls(1)` command, use a
+;; substitute written in Elisp.
+(unless (memq system-type '(gnu gnu/linux gnu/kfreebsd))
+  (setq ls-lisp-use-insert-directory-program nil)
+  (require 'ls-lisp))
+
+;; On Windows prefer using `plink.exe` program for TRAMP connections.
+(when (and (eq system-type 'windows-nt) (executable-find "plink"))
+  (setq tramp-default-method "plink"))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 10 PROCESS ENVIRONMENT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Make Elisp files in `~/.config/emacs/lisp' directory available.
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
+
+;; After XDG_DATA_HOME is set, can set PATH environment variable to any of the
+;; directories I typically use, provided that they exist.
+(use-package paths)
 
 ;; To prioritize access latency over availability, ensure that highly
 ;; ephemeral cache data is stored on local machine rather than a home
@@ -96,20 +109,6 @@
   (when (and state (file-directory-p history))
 	(setenv "HISTFILE" emacs)))
 
-;; After XDG_DATA_HOME is set, can set PATH environment variable to any of the
-;; directories I typically use, provided that they exist.
-(use-package paths)
-
-;; On machines that do not have GNU version of `ls(1)` command, use a
-;; substitute written in Elisp.
-(unless (memq system-type '(gnu gnu/linux gnu/kfreebsd))
-  (setq ls-lisp-use-insert-directory-program nil)
-  (require 'ls-lisp))
-
-;; On Windows prefer using `plink.exe` program for TRAMP connections.
-(when (and (eq system-type 'windows-nt) (executable-find "plink"))
-  (setq tramp-default-method "plink"))
-
 ;; Elide `git(1)` paging capability for sub-processes:
 (setenv "GIT_PAGER" "")
 
@@ -122,16 +121,6 @@
   (when cmd
 	(setenv "EDITOR" cmd)
 	(setenv "VISUAL" cmd)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 10 EARLY INIT
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(use-package hrg)
-
-(use-package which-key
-  :ensure t
-  :config (which-key-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 20 Window Management
@@ -225,8 +214,6 @@
 ;; xterm-color is superior to ansi-color
 ;; (https://github.com/atomontage/xterm-color)
 (use-package xterm-color
-  :ensure t
-
   :config
   (setenv "TERM" "xterm-256color")
 
@@ -259,18 +246,18 @@
 				(make-local-variable 'font-lock-function)
 				(setq font-lock-function (lambda (_) nil))
 				;; Add xterm-color hook
-				(add-hook 'comint-preoutput-filter-functions 'xterm-color-filter nil t))))
+				(add-hook 'comint-preoutput-filter-functions 'xterm-color-filter nil t)))
+
+  :ensure t)
 
 (use-package zenburn-theme
-  :ensure t
   :config
-  (load-theme 'zenburn t))
+  (load-theme 'zenburn t)
+  :ensure t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 30 MISCELLANEOUS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(use-package ksm-align)
 
 ;; aspell
 (let ((cmd (executable-find "aspell")))
@@ -302,29 +289,6 @@
 (use-package copy-and-comment
   :bind ("<f8>" . copy-and-comment))
 
-(use-package empty-string)
-
-(use-package find-file-dynamic
-  :after find-file-in-repository)
-
-(use-package ksm-list)
-
-(use-package make-shebang-executable)
-
-;; By default bind "C-x C-r" to rgrep, but when ripgrep command and deadgrep
-;; package are both available, rebind to the latter to use the former...
-(let ((cmd (executable-find "rg")))
-  (if (not cmd)
-	  (global-set-key (kbd "C-x C-r") #'rgrep)
-	(use-package deadgrep
-	  :bind (("C-x C-r" . deadgrep))
-	  :ensure t)))
-
-(use-package sort-commas)
-
-(use-package unfill-paragraph
-  :bind ("M-Q" . unfill-paragraph))
-
 (use-package dictionary
   ;; https://www.masteringemacs.org/article/wordsmithing-in-emacs
   :bind ("M-#" . dictionary-lookup-definition)
@@ -337,72 +301,39 @@
 				 (side . left)
 				 (window-width . 50))))
 
+(use-package empty-string)
+
+(use-package find-file-dynamic
+  :after find-file-in-repository)
+
+(use-package hrg)
+(use-package ksm-align)
+(use-package ksm-list)
+(use-package make-shebang-executable)
+
+;; By default bind "C-x C-r" to rgrep, but when ripgrep command and deadgrep
+;; package are both available, rebind to the latter to use the former...
+(let ((cmd (executable-find "rg")))
+  (if (not cmd)
+	  (global-set-key (kbd "C-x C-r") #'rgrep)
+	(use-package deadgrep
+	  :bind (("C-x C-r" . deadgrep))
+	  :ensure t)))
+
+(use-package setup-org-mode)
+(use-package sort-commas)
+
+(use-package unfill
+  :bind ("M-q" . unfill-toggle)
+  :ensure t)
+
+(use-package which-key
+  :ensure t
+  :config (which-key-mode))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 40 ORG
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; (require 'setup-org-mode)
-;; (require 'empty-string)
-;; (require 'org)
-;; (require 'org-mode-begin-src)
-
-(use-package org
-  :ensure t
-  :after empty-string
-
-  :bind (("C-c a" . org-agenda)
-		 ("C-c c" . org-capture))
-
-  :config
-
-  (defun org-mode-begin-src (language)
-	"Insert an 'org-mode' source block using LANGUAGE."
-	(interactive "sLanguage: ")
-	(if (empty-string-p language)
-		(insert (concat "#+BEGIN_SRC\n\n#+END_SRC\n"))
-	  (insert (concat "#+BEGIN_SRC " language "\n\n#+END_SRC\n")))
-	(previous-line 2))
-
-  (define-key org-mode-map (kbd "C-c s") #'org-mode-begin-src)
-
-  (require 'ol)
-  (define-key org-mode-map (kbd "C-c l") #'org-store-link)
-
-  (add-hook 'org-mode-hook #'(lambda ()
-							   (visual-line-mode)
-							   (local-set-key (kbd "C-c l") 'org-store-link)))
-  :custom
-
-  (org-clock-mode-line-today 'today)
-  (org-indent-mode t)
-  (org-todo-keywords '((sequence "TODO(t)" "STARTED(s)" "WAITING(w)" "PR(p)" "|" "MERGED(m)" "DONE(d)" "CANCELLED(c)" "DELEGATED(g)")))
-
-  (org-agenda-files '("~/gtd/inbox.org"
-					  "~/gtd/projects.org"
-					  "~/gtd/tickler.org")
-					"TODO DOCUMENT")
-
-  (org-capture-templates '(("t" "Todo [inbox]" entry
-							(file+headline "~/gtd/inbox.org" "Inbox")
-							"* TODO %i%?")
-						   ;; ("p" "Project [projects]" entry
-						   ;;  (file+headline "~/gtd/projects.org" "Projects")
-						   ;;  "* TODO %i%?")
-						   ("T" "Tickler" entry
-							(file+headline "~/gtd/tickler.org" "Tickler")
-							"* %i%? \n %U"))
-						 "TODO DOCUMENT")
-
-  (org-refile-targets '(("~/gtd/projects.org" :maxlevel . 3)
-						("~/gtd/agendas.org" :level . 1)
-						("~/gtd/inbox.org" :maxlevel . 2)
-						("~/gtd/references.org" :level . 1)
-						("~/gtd/someday.org" :level . 1)
-						("~/gtd/tickler.org" :maxlevel . 2))
-					  "TODO DOCUMENT")
-
-  (org-todo-keywords '((sequence "MAYBE (m)" "TODO(t)" "STARTED(s)" "WAITING(w)" "PR(p)" "|" "MERGED(g)" "DONE(d)" "CANCELLED(c)" "DELEGATED(g)"))
-					 "TODO DOCUMENT"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 50 VCS
@@ -540,15 +471,60 @@ If there is no .svn directory, examine if there is CVS and run
 
 (add-hook 'markdown-mode-hook #'visual-line-mode)
 
-(use-package nix-mode
+(require 'setup-elisp-mode)
+
+(use-package go-mode
+  :after eglot
+  :mode "\\.go\\'"
+
+  :config
+
+  (progn
+	(cond
+	 ((and nil (featurep 'lsp-mode))
+	  (lsp-register-custom-settings
+	   '(("gopls.completeUnimported" t t)
+		 ("gopls.staticcheck" t t)
+		 ("gopls.usePlaceholders" t t)))
+	  ;; Set up before-save hooks to format buffer and add modify
+	  ;; imports. Ensure there is not another gofmt(1) or goimports(1) hook
+	  ;; enabled.
+	  (defun lsp-go-install-save-hooks ()
+		(add-hook 'before-save-hook #'lsp-format-buffer t t)
+		(add-hook 'before-save-hook #'lsp-organize-imports t t))
+	  (add-hook 'go-mode-hook #'lsp-go-install-save-hooks)
+	  (add-hook 'go-mode-hook #'lsp))
+	 (t
+	  ;; Use gogetdoc as it provides better documentation than godoc and
+	  ;; godef.
+	  (when (executable-find "gogetdoc")
+		(setq godoc-at-point-function #'godoc-gogetdoc))
+
+	  ;; Prefer goimports, but when not found, use gofmt.
+	  (setq gofmt-command (or (executable-find "goimports")
+							  (executable-find "gofmt")))
+	  (add-hook 'go-mode-hook
+				#'(lambda ()
+					(if (functionp 'eglot-format-buffer)
+						(add-hook 'before-save-hook #'eglot-format-buffer nil t)
+					  (add-hook 'before-save-hook #'gofmt-before-save nil t))))))
+
+	(when nil
+	  ;; Fix parsing of error and warning lines in compiler output.
+	  (setq compilation-error-regexp-alist-alist ; first remove the standard conf; it's not good.
+			(remove 'go-panic
+					(remove 'go-test compilation-error-regexp-alist-alist)))
+	  ;; Make another one that works better and strips more space at the beginning.
+	  (add-to-list 'compilation-error-regexp-alist-alist
+				   '(go-test . ("^[[:space:]]*\\([_a-zA-Z./][_a-zA-Z0-9./]*\\):\\([0-9]+\\):.*$" 1 2)))
+	  (add-to-list 'compilation-error-regexp-alist-alist
+				   '(go-panic . ("^[[:space:]]*\\([_a-zA-Z./][_a-zA-Z0-9./]*\\):\\([0-9]+\\)[[:space:]].*$" 1 2)))
+	  ;; override.
+	  (add-to-list 'compilation-error-regexp-alist 'go-test t)
+	  (add-to-list 'compilation-error-regexp-alist 'go-panic t)))
+
   :ensure t)
 
-(use-package nix-ts-mode
-  :when (and (functionp 'treesit-available-p)
-			 (treesit-available-p)))
-
-(require 'setup-elisp-mode)
-(require 'setup-golang-mode)
 (require 'setup-javascript-mode)
 (require 'setup-python-mode)
 
@@ -685,7 +661,7 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(buffer-move company deadgrep default-text-scale flycheck go-mode puppet-mode python-black pyvenv rustic switch-window which-key zenburn-theme))
+   '(yasnippet eglot buffer-move company deadgrep default-text-scale flycheck go-mode puppet-mode python-black pyvenv rustic switch-window which-key zenburn-theme))
  '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
@@ -699,6 +675,8 @@ If there is no .svn directory, examine if there is CVS and run
  '(uniquify-buffer-name-style 'post-forward nil (uniquify))
  '(uniquify-ignore-buffers-re "^\\*")
  '(visible-bell t)
+ '(vterm-buffer-name-string "*vterm*|%s")
+ '(vterm-copy-exclude-prompt nil)
  '(wgrep-auto-save-buffer t))
 
 (custom-set-faces

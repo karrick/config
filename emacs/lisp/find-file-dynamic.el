@@ -14,8 +14,6 @@
 	  (ido-find-file)
 	(find-file-in-repository)))
 
-(global-set-key (kbd "C-x C-f") #'find-file-dynamic)
-
 ;; From: https://www.emacswiki.org/emacs/TrampMode
 (defun find-alternative-file-with-sudo ()
   "Toggle between opening the file with sudo or as unprivileged user."

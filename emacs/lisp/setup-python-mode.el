@@ -30,7 +30,7 @@
 
 (use-package ruff-format
   :ensure t
-  ;; :hook (python-mode . ruff-format-on-save-mode)
+  :hook (python-mode . ruff-format-on-save-mode)
   :when (executable-find "ruff"))
 
 (provide 'setup-python-mode)
