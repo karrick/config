@@ -68,17 +68,23 @@ case $_SHELL in
 	*) echo >&2 "unrecognized shell: '${_SHELL}'" ;;
 esac
 
+[ "$_SHELL" = "sh" ] || hrg() { ( cd "$XDG_STATE_HOME/history" && exec rg "$*" ) }
+
 # Make less more friendly for non-text input files, see lesspipe(1).
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
 alias clip='xclip -selection clipboard'
 alias dfs='df -lh -x devtmpfs -x tmpfs --output=source,ipcent,size,used,avail,pcent,target'
 alias hlf='ls -hlF'
-alias pg="pgrep -au $LOGNAME"
 
 alias hist='histogram --fold --descending'
 alias histr='histogram --fold --descending --raw'
 alias histw='histogram --fold --descending --width 80'
+
+# NOTE: The following aliases intentionally expand when defined rather than
+# when used.
+alias kill-emacs="pkill -u $LOGNAME emacs"
+alias pg="pgrep -au $LOGNAME"
 
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
@@ -93,18 +99,12 @@ if [ -x /usr/bin/dircolors ]; then
 	alias egrep='egrep --color=auto'
 fi
 
-unalias rm 2>/dev/null || :
-unalias cp 2>/dev/null || :
-unalias mv 2>/dev/null || :
-
-[ "$_SHELL" = "sh" ] || hrg() { ( cd "$XDG_STATE_HOME/history" && exec rg "$*" ) }
+hexl() { emacs -q -nw --eval "(hexl-find-file \"$1\")" ; }
 
 dos2unix () { tr -d '\r' <"$1" >"$2" ; }
 mac2unix () { tr '\r' '\n' <"$1" >"$2" ; }
 unix2mac () { tr '\n' '\r' <"$1" >"$2" ; }
 unix2dos () { ruby -pe '$_=$_.gsub(/$/, "\r")' <"$1" >"$2" ; }
-
-hexl() { local file=$1 ; emacs -q -nw --eval "(hexl-find-file \"$file\")" ; }
 
 set_gnu_screen_hardstatus_line () { printf "\e_%s\e\\" "$*"; }
 set_gnu_screen_window_title () { printf "\ek%s\e\\" "$*"; }

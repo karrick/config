@@ -1,3 +1,6 @@
+bpytop
+caja
+cni
 emacs/*.elc
 emacs/*.html
 emacs/*~
@@ -20,3 +23,5 @@ emacs/url
 git/credentials
 git/credentials.template
 htop/htoprc
+pulse
+yarn
