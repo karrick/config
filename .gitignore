@@ -1,6 +1,7 @@
 bpytop
 caja
 cni
+dconf/user
 emacs/*.elc
 emacs/*.html
 emacs/*~
@@ -22,6 +23,9 @@ emacs/tramp
 emacs/url
 git/credentials
 git/credentials.template
+gnome-control-center
+gtk-3.0/bookmarks
 htop/htoprc
+ibus
 pulse
 yarn
