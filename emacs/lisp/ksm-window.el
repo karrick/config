@@ -53,13 +53,13 @@
 	  (delete-other-windows-vertically)
 	(delete-other-windows)))
 
-(defun ksm/delete-window (&optional bury)
-  "Delete the current window.  With optional BURY, bury the current buffer."
+(defun ksm/delete-window (&optional kill)
+  "Delete the current window.  With optional KILL, kill the current buffer."
   (interactive "P")
-  (if (not bury)
+  (if (not kill)
 	  (delete-window)
-	(delete-window)
-	(bury-buffer)))
+	(kill-buffer)
+	(delete-window)))
 
 (defun ksm/delete-window-above ()
   "Delete the window above the current window."
