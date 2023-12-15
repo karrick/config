@@ -118,7 +118,7 @@ mkdir -p "$GOTMPDIR" # As of Go v1.20, it does not create this directory.
 
 mkdir -p "$XDG_STATE_HOME/history"
 export HISTCONTROL=ignoredups
-export HISTFILE="$XDG_STATE_HOME/history/$(hostname)-$$"
+export HISTFILE="$XDG_STATE_HOME/history/$(date +%F-%T)-$(hostname)"
 export HISTSIZE=2000
 
 unset os
