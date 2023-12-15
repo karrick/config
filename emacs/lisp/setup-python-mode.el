@@ -4,7 +4,8 @@
 
 (use-package emacs
   :hook (python-mode . (lambda ()
-						 (setq indent-tabs-mode nil
+						 (setq fill-column 80
+							   indent-tabs-mode nil
 							   tab-width 4))))
 
 (use-package python-black
