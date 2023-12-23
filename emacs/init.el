@@ -534,21 +534,12 @@ If there is no .svn directory, examine if there is CVS and run
 
 (require 'setup-ruby-mode)
 ;; (require 'setup-rust-mode)
-(require 'setup-zig-mode)
 
-;; tree-sitter is not yet configured properly.
-(when nil
-  (require 'tree-sitter)
-  (require 'tree-sitter-langs)
-  (require 'tree-sitter-indent)
-  (global-tree-sitter-mode)
-  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
-  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-indent-mode)
-  (progn
-	(require 'tree-sitter-ispell)
-	(cond
-	 (nil (global-set-key (kbd "C-x C-s") #'tree-sitter-ispell-run-at-point))
-	 (nil (global-set-key (kbd "C-x C-s") #'tree-sitter-ispell-run-buffer)))))
+(if t
+	(message "tree-sitter is not yet configured properly.")
+  (require 'setup-tree-sitter))
+
+(require 'setup-zig-mode)
 
 (use-package yasnippet
   :ensure t)
