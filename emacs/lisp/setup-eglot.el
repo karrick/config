@@ -23,7 +23,11 @@
   ;;   * yaml-language-server
   ;;   * zls (for zig)
 
-  ;; Declare which modes use eglot LSP client.
+  ;; Add hooks to each of the following modes to invoke #'eglot-ensure, which
+  ;; ensures that eglot-mode is activated for each.
+  ;;
+  ;; NOTE: Some modes are commented out because some aspect of their operation
+  ;; is not yet properly configured on all platforms.
   :hook
   ((
 	;; bash-ts-mode sh-mode

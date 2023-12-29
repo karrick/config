@@ -320,7 +320,7 @@
 	  :bind (("C-x C-r" . deadgrep))
 	  :ensure t)))
 
-(use-package setup-org-mode)
+(require 'setup-org-mode)
 (use-package sort-commas)
 
 (use-package unfill
@@ -385,57 +385,6 @@ If there is no .svn directory, examine if there is CVS and run
 	   (if selective-display nil (or col 1))))))
 (global-set-key (kbd "C-x $") #'aj-toggle-fold)
 
-(use-package eglot
-  :after yasnippet
-
-  :bind (:map eglot-mode-map
-			  ("C-c h" . eldoc)
-			  ("C-c o" . eglot-code-action-organize-imports)
-			  ("C-c r" . eglot-rename))
-
-  ;; See the eglot-server-programs variable, in addition to:
-  ;; https://github.com/joaotavora/eglot#connecting-to-a-server
-  ;;
-  ;;   * bash-language-server & shellcheck
-  ;;   * gopls
-  ;;   * jedi-language-server (or pylsp, pyls, pyright) (for python)
-  ;;   * rust-analyzer
-  ;;   * typescript-language-server (also used for js modes)
-  ;;   * yaml-language-server
-  ;;   * zls (for zig)
-
-  :hook
-  (
-   (
-	bash-ts-mode sh-mode
-	go-mode go-dot-mod-mode go-dot-work-mode go-ts-mode go-mod-ts-mode
-	;; js-mode js-ts-mode
-	python-mode
-	rust-ts-mode rust-mode
-	;; tsx-ts-mode typescript-ts-mode typescript-mode
-	;; yaml-ts-mode yaml-mode
-	;; zig-mode
-	)
-   . eglot-ensure
-   )
-
-  :custom
-
-  ;; While the following configuration option is not necessary, it is set here
-  ;; to non-nil in order to configure eglot to shut down servers when final
-  ;; buffer closed for which each respective server was supporting.
-  (eglot-autoshutdown t)
-
-  ;; The following configuration lines were required for lsp-mode, and might
-  ;; be needed for eglot, because they both do the same thing with the same
-  ;; JSON protocol. However, I am leaving them disabled for the time being,
-  ;; until I see that they are in-fact required for eglot operation.
-  ;;
-  ;; (gc-cons-threshold 1000000 "1 million")
-  ;; (read-process-output-max (* 4 1024 1024) "4 MiB to handle larger payloads from LISP.")
-
-  :ensure t)
-
 (use-package flycheck
   :defer t
   :ensure t
@@ -446,28 +395,6 @@ If there is no .svn directory, examine if there is CVS and run
 		(message "Cannot find 'shellcheck' program.")
 	  (setq flycheck-sh-shellcheck-executable cmd)
 	  (add-hook 'sh-mode-hook 'flycheck-mode))))
-
-(use-package lsp-mode
-  :disabled
-  ;; :ensure t
-  :after which-key
-
-  :init
-  ;; Empirically discovered that lsp-keymap-prefix must be set before loading
-  ;; lsp-mode.
-  (setq lsp-keymap-prefix "C-c l")
-
-  ;; :bind
-  ;; ("C-x 4 M-." . xref-find-definitions-other-window)
-
-  :custom
-  (gc-cons-threshold 1000000 "1 million")
-  (lsp-enable-snippet nil)
-  (read-process-output-max (* 4 1024 1024) "4 MiB to handle larger payloads from LISP.")
-
-  :config
-  (when (featurep 'which-key)
-	(lsp-enable-which-key-integration t)))
 
 (add-hook 'markdown-mode-hook #'visual-line-mode)
 
@@ -480,34 +407,19 @@ If there is no .svn directory, examine if there is CVS and run
   :config
 
   (progn
-	(cond
-	 ((and nil (featurep 'lsp-mode))
-	  (lsp-register-custom-settings
-	   '(("gopls.completeUnimported" t t)
-		 ("gopls.staticcheck" t t)
-		 ("gopls.usePlaceholders" t t)))
-	  ;; Set up before-save hooks to format buffer and add modify
-	  ;; imports. Ensure there is not another gofmt(1) or goimports(1) hook
-	  ;; enabled.
-	  (defun lsp-go-install-save-hooks ()
-		(add-hook 'before-save-hook #'lsp-format-buffer t t)
-		(add-hook 'before-save-hook #'lsp-organize-imports t t))
-	  (add-hook 'go-mode-hook #'lsp-go-install-save-hooks)
-	  (add-hook 'go-mode-hook #'lsp))
-	 (t
-	  ;; Use gogetdoc as it provides better documentation than godoc and
-	  ;; godef.
-	  (when (executable-find "gogetdoc")
-		(setq godoc-at-point-function #'godoc-gogetdoc))
+	;; Use gogetdoc as it provides better documentation than godoc and
+	;; godef.
+	(when (executable-find "gogetdoc")
+	  (setq godoc-at-point-function #'godoc-gogetdoc))
 
-	  ;; Prefer goimports, but when not found, use gofmt.
-	  (setq gofmt-command (or (executable-find "goimports")
-							  (executable-find "gofmt")))
-	  (add-hook 'go-mode-hook
-				#'(lambda ()
-					(if (functionp 'eglot-format-buffer)
-						(add-hook 'before-save-hook #'eglot-format-buffer nil t)
-					  (add-hook 'before-save-hook #'gofmt-before-save nil t))))))
+	;; Prefer goimports, but when not found, use gofmt.
+	(setq gofmt-command (or (executable-find "goimports")
+							(executable-find "gofmt")))
+	(add-hook 'go-mode-hook
+			  #'(lambda ()
+				  (if (functionp 'eglot-format-buffer)
+					  (add-hook 'before-save-hook #'eglot-format-buffer nil t)
+					(add-hook 'before-save-hook #'gofmt-before-save nil t))))
 
 	(when nil
 	  ;; Fix parsing of error and warning lines in compiler output.
@@ -531,6 +443,8 @@ If there is no .svn directory, examine if there is CVS and run
 (use-package puppet-mode
   :mode "\\.pp\\'"
   :ensure t)
+
+(require 'setup-eglot)
 
 (require 'setup-ruby-mode)
 ;; (require 'setup-rust-mode)
@@ -614,8 +528,6 @@ If there is no .svn directory, examine if there is CVS and run
 ;; 99 Custom Set Variables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; buffer-move company deadgrep default-text-scale fic-mode find-file-in-repository flycheck gnu-elpa-keyring-update highlight-indent-guides jenkinsfile-mode js2-mode json-mode just-mode lsp-pyright lsp-ui markdown-mode nginx-mode nov projectile puppet-mode rust-mode rustic switch-window system-packages tree-sitter tree-sitter-indent tree-sitter-ispell tree-sitter-langs vc-fossil vterm which-key xterm-color yaml-mode zenburn-theme zig-mode
-
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -653,7 +565,6 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
    '(yasnippet eglot buffer-move company deadgrep default-text-scale flycheck go-mode puppet-mode python-black pyvenv rustic switch-window which-key zenburn-theme))
- '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
  '(sh-basic-offset 4)
