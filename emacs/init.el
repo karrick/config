@@ -9,16 +9,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (when init-file-debug
-  (if (and (functionp 'native-comp-available-p)
-		   (native-comp-available-p))
-	  (message "Native compilation is available")
-	(message "Native compilation is *not* available"))
-
-  (if (and (functionp 'json-serialize)
-		   (json-serialize nil))
-	  (message "Native JSON is available")
-	(message "Native JSON is *not* available"))
-
   (setq use-package-verbose t
 		use-package-expand-minimally nil
 		use-package-compute-statistics t
@@ -29,6 +19,17 @@
 		("nongnu" . "https://elpa.nongnu.org/nongnu/")
 		("melpa-stable" . "https://stable.melpa.org/packages/")
 		("melpa" . "https://melpa.org/packages/")))
+
+(if (and (functionp 'native-comp-available-p)
+		 (native-comp-available-p))
+	(message "Native compilation is available")
+  (message "Native compilation is *not* available"))
+
+(if (and (functionp 'json-serialize)
+		 (json-serialize nil))
+	(message "Native JSON is available")
+  (message "Native JSON is *not* available"))
+
 
 ;; When running in daemon mode, change process directory to user home
 ;; directory.
