@@ -12,6 +12,8 @@
 (path-prepend (expand-file-name "~/.cargo/bin"))
 
 (use-package rustic
+  ;; Improvement upon rust-mode, with flycheck integration.
+  ;;
   ;; https://github.com/brotzeit/rustic
 
   :config

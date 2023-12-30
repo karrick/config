@@ -2,6 +2,9 @@
 
 ;;; Commentary:
 
+;; TODO: Investigate various ob-* packages to allow org-babel integration,
+;; such as ob-async and ob-compile.
+
 ;;; Code:
 
 (require 'empty-string)
