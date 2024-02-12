@@ -9,7 +9,8 @@
 							   tab-width 4))))
 
 (use-package python-black
-  :ensure t
+  :disabled
+  ;; :ensure t
   ;; :hook (python-mode . python-black-on-save-mode-enable-dwim)
   :when (executable-find "black"))
 

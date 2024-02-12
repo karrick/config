@@ -42,6 +42,9 @@
 
   :custom
 
+  ;; Disable eglot use of flymake.
+  ;; (eglot-stay-out-of '(flymake))
+
   ;; While the following configuration option is not necessary, it is set here
   ;; to non-nil in order to configure eglot to shut down servers when final
   ;; buffer closed for which each respective server was supporting.
