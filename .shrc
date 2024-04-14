@@ -40,6 +40,11 @@ case $_SHELL in
 			fi
 		fi
 
+		function osc_seven_hostname_pwd () {
+			printf "\e]7;file://%s%s\e\\" "$HOSTNAME" "$PWD"
+		}
+		PROMPT_COMMAND=osc_seven_hostname_pwd
+
 		PS0='\[\e[2m\]# START: \D{%F}T\A\[\e[22m\]\n'
 		case color in
 			mono)
