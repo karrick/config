@@ -22,14 +22,13 @@
 
 (if (and (functionp 'native-comp-available-p)
 		 (native-comp-available-p))
-	(message "Native compilation is available")
-  (message "Native compilation is *not* available"))
+	(message "native-compilation is available")
+  (message "native-compilation is *not* available"))
 
 (if (and (functionp 'json-serialize)
 		 (json-serialize nil))
-	(message "Native JSON is available")
-  (message "Native JSON is *not* available"))
-
+	(message "native-json is available")
+  (message "native-json is *not* available"))
 
 ;; When running in daemon mode, change process directory to user home
 ;; directory.
@@ -175,9 +174,9 @@
   :bind (("C-x C-b" . #'ibuffer)))
 
 (use-package ksm-window
-  :bind (("C-x j" . ksm/window-config-restore) ; jump to window configuration from hash
-		 ;; ("C-x p" . ksm/window-config-save) ; save window configuration to hash
-		 ("C-x 0" . ksm/delete-window)		; extension to existing behavior
+  :bind (("C-x w c" . ksm/window-config-save) ; copy window configuration to hash
+		 ("C-x w r" . ksm/window-config-restore) ; restore window configuration from hash
+		 ("C-x 0" . ksm/delete-window)		  ; extension to existing behavior
 		 ("C-x 1" . ksm/delete-other-windows) ; extension to existing behavior
 		 ;; ("C-x 2" . split-window-below) ; this is the default key binding
 		 ;; ("C-x 3" . split-window-right) ; this is the default key binding
@@ -243,7 +242,9 @@
 
   ;; shell mode
   (setq comint-output-filter-functions
-		(remove 'ansi-color-process-output comint-output-filter-functions))
+		(cons #'comint-osc-process-output
+			  (remove 'ansi-color-process-output comint-output-filter-functions)))
+
   (add-hook 'shell-mode-hook
 			#'(lambda ()
 				;; Disable font-locking in this buffer to improve
@@ -329,6 +330,11 @@
 	  :bind (("C-x C-r" . deadgrep))
 	  :ensure t)))
 
+;; serial-term
+(when nil
+  ;; example use
+  (serial-process-configure :process "/dev/ttyS0" :speed 1200))
+
 (require 'setup-org-mode)
 (use-package sort-commas)
 
@@ -374,8 +380,7 @@ If there is no .svn directory, examine if there is CVS and run
 
 ;; Tabs and indentation.
 
-;; (defvaralias 'c-basic-offset 'tab-width)
-;; (defvaralias
+(defvaralias 'c-basic-offset 'tab-width)
 (defvaralias 'cperl-indent-level 'tab-width)
 (defvaralias 'perl-indent-level 'tab-width)
 (defvaralias 'yaml-indent-level 'tab-width)
@@ -458,9 +463,7 @@ If there is no .svn directory, examine if there is CVS and run
 (require 'setup-ruby-mode)
 ;; (require 'setup-rust-mode)
 
-(if t
-	(message "tree-sitter is not yet configured properly.")
-  (require 'setup-tree-sitter))
+(require 'setup-tree-sitter)
 
 (require 'setup-zig-mode)
 
@@ -573,7 +576,7 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(buffer-move company deadgrep default-text-scale eglot flycheck go-mode puppet-mode pyvenv rustic switch-window tree-sitter which-key yasnippet zenburn-theme))
+   '(buffer-move company deadgrep default-text-scale eglot flycheck go-mode nix-mode puppet-mode pyvenv rustic switch-window which-key yasnippet zenburn-theme))
  '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
