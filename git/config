@@ -37,6 +37,7 @@
     rebase = true
 
 [push]
+    autosetupremote = true
     default = simple
     # followTags = true
 
