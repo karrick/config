@@ -56,10 +56,9 @@
 (defun ksm/delete-window (&optional kill)
   "Delete the current window.  With optional KILL, kill the current buffer."
   (interactive "P")
-  (if (not kill)
-	  (delete-window)
-	(kill-buffer)
-	(delete-window)))
+  (if kill
+	  (kill-buffer))
+  (delete-window))
 
 (defun ksm/delete-window-above ()
   "Delete the window above the current window."
