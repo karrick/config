@@ -5,7 +5,7 @@
 set -e
 
 basename=$(basename "$0")
-defaultRelease=29.3
+defaultRelease=29.4
 
 [ -n "$XDG_DOWNLOAD_DIR" ] || XDG_DOWNLOAD_DIR="$HOME/Downloads"
 [ -d "$XDG_DOWNLOAD_DIR" ] || mkdir -p "$XDG_DOWNLOAD_DIR"
@@ -139,7 +139,7 @@ if [ -n "$with_x_toolkit" ] ; then
 	# which graphics framework is to be used.
 	case $os in
 		darwin)  packages="$packages librsvg" ;;
-		el?)     packages="$packages giflib giflib-devel harfbuzz harfbuzz-devel libjpeg libjpeg-devel libpng-devel libtiff-devel libX11-devel libXpm-devel openjpeg2-devel" ;;
+		el?)     packages="$packages giflib giflib-devel harfbuzz harfbuzz-devel libX11-devel libXpm-devel libjpeg libjpeg-devel libpng-devel librsvg2 librsvg2-devel libtiff-devel openjpeg2-devel" ;;
 		openbsd) : ;;
 		*)       echo >&2 "WARNING: no graphics packages defined for: $os" ;;
 	esac
