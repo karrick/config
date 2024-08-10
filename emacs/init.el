@@ -268,6 +268,11 @@
 ;; 30 MISCELLANEOUS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; prevent stuttering of command in inferior shell processes.
+(defun my-comint-init ()
+  (setq comint-process-echoes t))
+(add-hook 'comint-mode-hook 'my-comint-init)
+
 ;; aspell
 (let ((cmd (executable-find "aspell")))
   (if (null cmd)
