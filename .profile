@@ -59,12 +59,12 @@ echo "Feel free to erase this directory and all of its contents." > "$TMPDIR/REA
 # echo $PATH | tr : '\n' >&2
 
 for i in \
-	$HOME/.cargo/bin \
-	$XDG_DATA_HOME/${os}/bin \
-	$XDG_DATA_HOME/bin \
 	/opt/local/sbin \
 	/opt/local/bin \
 	/opt/local/libexec/gnubin \
+	$HOME/.cargo/bin \
+	$XDG_DATA_HOME/bin \
+	$XDG_DATA_HOME/${os}/bin \
     ; do
     [ -d "$i" ] && export PATH="${i}:${PATH}"
 done
