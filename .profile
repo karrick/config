@@ -66,6 +66,7 @@ for i in \
 	$XDG_DATA_HOME/bin \
 	$XDG_DATA_HOME/${os}/bin \
     ; do
+    # [ -d "$i" ] && export PATH="${i}:${PATH}" && echo "--> [Y] $i" || echo "--> [N] $i"
     [ -d "$i" ] && export PATH="${i}:${PATH}"
 done
 unset i
@@ -73,9 +74,6 @@ unset i
 # No need to search directories multiple times: Omit duplicate entries from
 # PATH, but keep items in the same relative order.
 export PATH="$(echo "$PATH" | awk 'BEGIN { FS=":"; ORS="" } { for (i=1; i<=NF; i++) if (foo[$i] != 1) { if (i>1) print ":"; print $i; foo[$i]=1 } }')"
-
-# echo FINAL PATH
-# echo $PATH | tr : '\n' >&2
 
 unset MANPATH
 export MANPATH=$(echo "$PATH" | tr : '\n' | (while read -r p ; do
@@ -149,9 +147,14 @@ case $_SHELL in
 		[ ! -r "$HOME/.shrc" ] || export ENV="$HOME/.shrc"
 		;;
     zsh)
-		# TODO: research a bit, but it looks like Zsh needs similar invocation
-		# setup as Bash.
-		[ ! -f "$HOME/.shrc" ] || . "$HOME/.shrc"
+		# Zsh will invoke ~/.zshenv for all shells, then invoke ~/.zprofile
+		# for all login shells, then ~/.zshrc for all interactive shells. It
+		# is sufficient to create symbolic links to obtain similar behavior as
+		# other shells which are special cased above.
+		# 
+		#     ln -s .profile .zprofile
+		#     ln -s .shrc    .zshrc
+		:
 		;;
     *) echo >&2 "unrecognized shell: '${_SHELL}'" ;;
 esac

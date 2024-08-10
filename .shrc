@@ -6,8 +6,6 @@
 # done here. Alternatively, things that only need to be done once when
 # a user logs into the machine should be done in ~/.profile file.
 
-# echo >&2 "$SHELL (interactive): running $HOME/.shrc"
-
 if test -n "$BASH_VERSION" ; then
 	_SHELL="bash"
 elif test -n "$KSH_VERSION" ; then
@@ -19,6 +17,8 @@ elif test -z "$PS3" ; then
 else
 	_SHELL="unknown"
 fi
+
+# echo >&2 "$SHELL (interactive): running $HOME/.shrc: ($_SHELL)"
 
 case $_SHELL in
 	bash)
@@ -72,7 +72,18 @@ case $_SHELL in
 		esac
 		;;
 
-	ksh|sh|zsh) : ;;
+	ksh|sh) : ;;
+
+	zsh)
+		function preexec () {
+			# printf "\e]7;file://%s%s\e\\" "$HOSTNAME" "$PWD"
+			printf "\e[2m# START: %s\e[22m\n" "$(date +%FT%T%Z)"
+		}
+
+		PROMPT=$'\e[2m# FINISH: %D{%FT%T%Z}\e[22m [%(?,\e[32m0\e[39m,\e[1;31m%?\e[22;39m)]%{\n%}# \e[32m%n\e[39m@\e[36m%M\e[39m:\e[33m%~\e[39m%{\n%}%# '
+
+		;;
+
 	*) echo >&2 "unrecognized shell: '${_SHELL}'" ;;
 esac
 
