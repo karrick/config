@@ -62,10 +62,6 @@
 ;; Make Elisp files in `~/.config/emacs/lisp' directory available.
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 
-;; After XDG_DATA_HOME is set, can set PATH environment variable to any of the
-;; directories I typically use, provided that they exist.
-(use-package paths)
-
 ;; To prioritize access latency over availability, ensure that highly
 ;; ephemeral cache data is stored on local machine rather than a home
 ;; directory that is potentially mounted over a network. However, do place all
@@ -108,6 +104,10 @@
 	   (emacs (file-name-concat history "emacs")))
   (when (and state (file-directory-p history))
 	(setenv "HISTFILE" emacs)))
+
+;; After XDG_DATA_HOME is set, can set PATH environment variable to any of the
+;; directories I typically use, provided that they exist.
+(use-package paths)
 
 ;; Elide `git(1)` paging capability for sub-processes:
 (setenv "GIT_PAGER" "")
