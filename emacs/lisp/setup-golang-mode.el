@@ -9,26 +9,26 @@
 
 ;;; Code:
 
+(progn
+  (require 'ksm-system-name)
+  (let ((xdg-data-home (getenv "XDG_DATA_HOME"))
+		(os (ksm/system-name)))
+	(env-set-when-null "GOBIN" (file-name-concat xdg-data-home (ksm/system-name) "bin") init-file-debug))
+
+  (env-set-when-null "GOCACHE" (file-name-concat (getenv "XDG_CACHE_HOME") "go-build") init-file-debug)
+  (env-set-when-null "GOMODCACHE" (file-name-concat (getenv "XDG_DATA_HOME") "go" "pkg" "mod") init-file-debug)
+  (env-set-when-null "GOTMPDIR" (file-name-concat (getenv "XDG_CACHE_HOME") "go-tmp") init-file-debug))
+
+(let ((dir (getenv "GOTMPDIR")))
+  (unless (file-directory-p dir)
+	(make-directory dir 't)
+	(message "Created GOTMPDIR: %s" dir)))
+
 (use-package go-mode
   :after eglot
   :mode "\\.go\\'"
 
   :config
-
-  (progn
-	(require 'ksm-system-name)
-	(let ((xdg-data-home (getenv "XDG_DATA_HOME"))
-		  (os (ksm/system-name)))
-	  (env-set-when-null "GOBIN" (file-name-concat xdg-data-home (ksm/system-name) "bin") init-file-debug))
-
-	(env-set-when-null "GOCACHE" (file-name-concat (getenv "XDG_CACHE_HOME") "go-build") init-file-debug)
-	(env-set-when-null "GOMODCACHE" (file-name-concat (getenv "XDG_DATA_HOME") "go" "pkg" "mod") init-file-debug)
-	(env-set-when-null "GOTMPDIR" (file-name-concat (getenv "XDG_CACHE_HOME") "go-tmp") init-file-debug))
-
-  (let ((dir (getenv "GOTMPDIR")))
-	(unless (file-directory-p dir)
-	  (make-directory dir 't)
-	  (message "Created GOTMPDIR: %s" dir)))
 
   ;; Use gogetdoc as it provides better documentation than godoc and godef.
   (when (executable-find "gogetdoc")
