@@ -45,44 +45,51 @@ case $_SHELL in
 		}
 		PROMPT_COMMAND=osc_seven_hostname_pwd
 
-		case color in
-			mono)
-				PS0='# START: \D{%F}T\D{%T}\D{%Z}\n'
-				PS1='# FINISH: \D{%F}T\D{%T}\D{%Z} [$?\]]\n# \u@\H:\w\n\$ '
-				;;
-			color)
-				PS0='\[\e[2m\]# START: \D{%F}T\D{%T}\D{%Z}\[\e[22m\]\n'
-				PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n$ '
-				;;
-			fancy)
-				PS0='\[\e[2m\]# START: \D{%F}T\D{%T}\D{%Z}\[\e[22m\]\n'
+		if [ -n "$NOCOLOR" ] ; then
+			PS0='# START: \D{%F}T\D{%T}\D{%Z}\n'
+			PS1='# FINISH: \D{%F}T\D{%T}\D{%Z} [$?\]]\n# \u@\H:\w\n\$ '
+		else
+			case color in
+				color)
+					PS0='\[\e[2m\]# START: \D{%F}T\D{%T}\D{%Z}\[\e[22m\]\n'
+					PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n$ '
+					;;
+				fancy)
+					PS0='\[\e[2m\]# START: \D{%F}T\D{%T}\D{%Z}\[\e[22m\]\n'
 
-				if [ -n "$HOSTPROMPT" ] ; then
-					PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]${HOSTPROMPT}\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n'
-				else
-					PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n'
-				fi
+					if [ -n "$HOSTPROMPT" ] ; then
+						PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]${HOSTPROMPT}\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n'
+					else
+						PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n'
+					fi
 
-				if which git_prompt >/dev/null 2>&1 ; then
-					PS1="${PS1}\[\e[35m\]\$(git_prompt)\[\e[39m\]"
-				fi
+					if which git_prompt >/dev/null 2>&1 ; then
+						PS1="${PS1}\[\e[35m\]\$(git_prompt)\[\e[39m\]"
+					fi
 
-				PS1="${PS1}\$ "
-				;;
-		esac
+					PS1="${PS1}\$ "
+					;;
+			esac
+		fi
+
 		;;
 
 	ksh|sh) : ;;
 
 	zsh)
-		function preexec () {
-			# printf "\e]7;file://%s%s\e\\" "$HOSTNAME" "$PWD"
-			printf "\e]7;file://%s%s\a" "$LOGNAME" "$PWD"
-			printf "\e[2m# START: %s\e[22m\n" "$(date +%FT%T%Z)"
-		}
-
-		PROMPT=$'\e[2m# FINISH: %D{%FT%T%Z}\e[22m [%(?,\e[32m0\e[39m,\e[1;31m%?\e[22;39m)]%{\n%}# \e[32m%n\e[39m@\e[36m%M\e[39m:\e[33m%~\e[39m%{\n%}%# '
-
+		if [ -n "$NOCOLOR" ] ; then
+			function preexec () {
+				printf "\e]7;file://%s%s\a" "$HOSTNAME" "$PWD"
+				printf "# START: %s\n" "$(date +%FT%T%Z)"
+			}
+			PROMPT=$'# FINISH: %D{%FT%T%Z} [%(?,0,%?)]%{\n%}# m%n@%M:%~%{\n%}%# '
+		else
+			function preexec () {
+				printf "\e]7;file://%s%s\a" "$HOSTNAME" "$PWD"
+				printf "\e[2m# START: %s\e[22m\n" "$(date +%FT%T%Z)"
+			}
+			PROMPT=$'\e[2m# FINISH: %D{%FT%T%Z}\e[22m [%(?,\e[32m0\e[39m,\e[1;31m%?\e[22;39m)]%{\n%}# \e[32m%n\e[39m@\e[36m%M\e[39m:\e[33m%~\e[39m%{\n%}%# '
+		fi
 		;;
 
 	*) echo >&2 "unrecognized shell: '${_SHELL}'" ;;
