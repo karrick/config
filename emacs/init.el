@@ -2,6 +2,8 @@
 
 ;;; Commentary:
 
+;; Needs to perform all init performed by ~/.profile, but not by ~/.shrc.
+
 ;;; Code:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -62,6 +64,8 @@
 ;; Make Elisp files in `~/.config/emacs/lisp' directory available.
 (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 
+(require 'ksm-system-name)
+
 ;; To prioritize access latency over availability, ensure that highly
 ;; ephemeral cache data is stored on local machine rather than a home
 ;; directory that is potentially mounted over a network. However, do place all
@@ -79,25 +83,13 @@
 			 (t
 			  (file-name-concat tmpdir logname))))))
 
+(require 'env-set-when-null)
+
 ;; https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
-(use-package env-set-when-null
-  :config
-  (if init-file-debug
-	  (progn
-		(env-set-when-null-verbose "XDG_CACHE_HOME" (getenv "TMPDIR"))
-		(env-set-when-null-verbose "XDG_CONFIG_HOME" (expand-file-name "~/.config"))
-		(env-set-when-null-verbose "XDG_DATA_HOME" (expand-file-name "~/.local/share"))
-		(env-set-when-null-verbose "XDG_STATE_HOME" (expand-file-name "~/.local/state"))
-		(env-set-when-null-verbose "GOCACHE" (file-name-concat (getenv "XDG_CACHE_HOME") "go-build"))
-		;; (env-set-when-null-verbose "GOBIN" (file-name-concat (getenv "XDG_DATA_HOME") os "bin"))
-		(env-set-when-null-verbose "GOTMPDIR" (file-name-concat (getenv "XDG_CACHE_HOME") "go-tmp"))))
-  (env-set-when-null "XDG_CACHE_HOME" (getenv "TMPDIR"))
-  (env-set-when-null "XDG_CONFIG_HOME" (expand-file-name "~/.config"))
-  (env-set-when-null "XDG_DATA_HOME" (expand-file-name "~/.local/share"))
-  (env-set-when-null "XDG_STATE_HOME" (expand-file-name "~/.local/state"))
-  (env-set-when-null "GOCACHE" (file-name-concat (getenv "XDG_CACHE_HOME") "go-build"))
-  ;; (env-set-when-null "GOBIN" (file-name-concat (getenv "XDG_DATA_HOME") os "bin"))
-  (env-set-when-null "GOTMPDIR" (file-name-concat (getenv "XDG_CACHE_HOME") "go-tmp")))
+(env-set-when-null "XDG_CACHE_HOME" (getenv "TMPDIR") init-file-debug)
+(env-set-when-null "XDG_CONFIG_HOME" (expand-file-name "~/.config") init-file-debug)
+(env-set-when-null "XDG_DATA_HOME" (expand-file-name "~/.local/share") init-file-debug)
+(env-set-when-null "XDG_STATE_HOME" (expand-file-name "~/.local/state") init-file-debug)
 
 (let* ((state (getenv "XDG_STATE_HOME"))
 	   (history (file-name-concat state "history"))
@@ -352,11 +344,7 @@
   :config (which-key-mode))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 40 RESERVED
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 50 VCS
+;; 40 VCS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (with-eval-after-load 'vc-hooks
@@ -380,7 +368,7 @@ If there is no .svn directory, examine if there is CVS and run
   t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 60 PROGRAMMING
+;; 50 PROGRAMMING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Tabs and indentation.
@@ -418,44 +406,7 @@ If there is no .svn directory, examine if there is CVS and run
 (add-hook 'markdown-mode-hook #'visual-line-mode)
 
 (require 'setup-elisp-mode)
-
-(use-package go-mode
-  :after eglot
-  :mode "\\.go\\'"
-
-  :config
-
-  (progn
-	;; Use gogetdoc as it provides better documentation than godoc and
-	;; godef.
-	(when (executable-find "gogetdoc")
-	  (setq godoc-at-point-function #'godoc-gogetdoc))
-
-	;; Prefer goimports, but when not found, use gofmt.
-	(setq gofmt-command (or (executable-find "goimports")
-							(executable-find "gofmt")))
-	(add-hook 'go-mode-hook
-			  #'(lambda ()
-				  (if (functionp 'eglot-format-buffer)
-					  (add-hook 'before-save-hook #'eglot-format-buffer nil t)
-					(add-hook 'before-save-hook #'gofmt-before-save nil t))))
-
-	(when nil
-	  ;; Fix parsing of error and warning lines in compiler output.
-	  (setq compilation-error-regexp-alist-alist ; first remove the standard conf; it's not good.
-			(remove 'go-panic
-					(remove 'go-test compilation-error-regexp-alist-alist)))
-	  ;; Make another one that works better and strips more space at the beginning.
-	  (add-to-list 'compilation-error-regexp-alist-alist
-				   '(go-test . ("^[[:space:]]*\\([_a-zA-Z./][_a-zA-Z0-9./]*\\):\\([0-9]+\\):.*$" 1 2)))
-	  (add-to-list 'compilation-error-regexp-alist-alist
-				   '(go-panic . ("^[[:space:]]*\\([_a-zA-Z./][_a-zA-Z0-9./]*\\):\\([0-9]+\\)[[:space:]].*$" 1 2)))
-	  ;; override.
-	  (add-to-list 'compilation-error-regexp-alist 'go-test t)
-	  (add-to-list 'compilation-error-regexp-alist 'go-panic t)))
-
-  :ensure t)
-
+(require 'setup-golang-mode)
 (require 'setup-javascript-mode)
 (require 'setup-python-mode)
 
@@ -467,9 +418,8 @@ If there is no .svn directory, examine if there is CVS and run
 
 (require 'setup-ruby-mode)
 ;; (require 'setup-rust-mode)
-
+(require 'setup-shell-script-mode)
 (require 'setup-tree-sitter)
-
 (require 'setup-zig-mode)
 
 (use-package yasnippet
@@ -581,7 +531,7 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(ac-emoji buffer-move company deadgrep default-text-scale eglot flycheck go-mode nix-mode puppet-mode pyvenv rustic switch-window which-key yasnippet zenburn-theme))
+   '(ac-emoji buffer-move company deadgrep default-text-scale eglot flycheck go-mode nix-mode puppet-mode pyvenv rustic shfmt switch-window which-key yasnippet zenburn-theme zig-mode))
  '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)

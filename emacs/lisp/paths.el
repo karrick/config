@@ -8,58 +8,31 @@
 ;;; Code:
 
 (require 'empty-string)
+(require 'env-set-when-null)
+(require 'ksm-system-name)
 (require 'path)
 
-;; (env-set-when-null "GOBIN"
-;;				   (file-name-concat (getenv "XDG_DATA_HOME") os "bin"))
-
-;; (unless (getenv "GOBIN")
-;;   (setenv "GOBIN" (file-name-concat (getenv "XDG_DATA_HOME")
-
-;; (let ((gobin (getenv "GOBIN")))
-;;   (when (non-empty-string-or-nil gobin)
-;;	   "foo"))
-
-(defun system-name ()
-  "Returns a string representing the system-type."
-  (cond
-   ((memq system-type '(darwin ms-dos windows-nt cygwin haiku)) (symbol-name system-type))
-   ((eq system-type 'gnu/kfreebsd) "freebsd")
-   ((eq system-type 'gnu/linux) (or
-								 ;; Some programs must be compiled for each
-								 ;; major EL release version.
-								 (and
-								  (file-readable-p "/etc/os-release")
-								  (with-temp-buffer
-									(insert-file-contents "/etc/os-release")
-									(goto-char (point-min))
-									(when
-										(re-search-forward "^VERSION_ID[ \t]\\([0-9]+\\)" nil 'NOERROR)
-									  (concat "el" (match-string 1)))))
-								 (when (file-readable-p "/etc/debian-release")
-								   "debian")
-								 "linux"))
-   (t "unknown")))
-
-(let* ((xdg-data-home (getenv "XDG_DATA_HOME"))
-	   (os (system-name))
-	   (gobin (or
-			   (getenv "GOBIN")
-			   (let ((gopath (getenv "GOPATH")))
-				 (when (non-empty-string-or-nil gopath)
-				   (file-name-concat gopath "bin")))))
-	   (candidates (list
-					"~/.cargo/bin"
-					gobin
-					"~/bin"
-					(file-name-concat xdg-data-home "bin")
-					(file-name-concat xdg-data-home os "bin")
-					)))
-  (dolist (path candidates)
-	(when (not (empty-string-p path))
-	  (setq path (expand-file-name path))
-	  (when (file-accessible-directory-p path)
-		(path-prepend path)))))
+(let ((xdg-data-home (getenv "XDG_DATA_HOME")))
+  (if (empty-string-p xdg-data-home)
+	  (message "WARNING: XDG_DATA_HOME is empty.")
+	(let* ((base (list
+				  (file-name-concat "~" ".cargo" "bin")
+				  (file-name-concat xdg-data-home (ksm/system-name) "bin")
+				  (file-name-concat xdg-data-home "bin")
+				  (file-name-concat "~" "bin")
+				  ))
+		   (paths (if (eq system-type 'darwin)
+					  (append
+					   (list
+						"/opt/local/sbin"
+						"/opt/local/bin"
+						"/opt/local/libexec/gnubin"
+						)
+					   base)
+					base)))
+	  (dolist (path (mapcar #'(lambda (path) (expand-file-name path)) paths))
+		(when (file-accessible-directory-p path)
+		  (path-prepend path))))))
 
 (provide 'paths)
 

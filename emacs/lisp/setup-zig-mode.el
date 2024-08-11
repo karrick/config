@@ -11,10 +11,12 @@
 (when (executable-find "zls")
   (add-hook 'zig-mode-hook #'lsp-deferred))
 
-;; This block sets up buffer scoped configuration and is invoked
-;; every time a new zig-mode buffer is created.
-(add-hook 'zig-mode-hook #'(lambda ()
-			     (set (make-local-variable 'compile-command) (concat "zig test " (buffer-file-name)))))
+(when nil
+  ;; This block sets up buffer scoped configuration and is invoked every time a
+  ;; new zig-mode buffer is created.
+  (add-hook 'zig-mode-hook
+			#'(lambda ()
+				(set (make-local-variable 'compile-command) (concat "zig test " (buffer-file-name))))))
 
 (provide 'setup-zig-mode)
 

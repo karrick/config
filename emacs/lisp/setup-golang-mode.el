@@ -10,16 +10,38 @@
 ;;; Code:
 
 (use-package go-mode
+  :after eglot
+  :mode "\\.go\\'"
+
   :config
 
-  ;; Prefer gogetdoc as it provides better documentation than godoc and godef.
+  (progn
+	(require 'ksm-system-name)
+	(let ((xdg-data-home (getenv "XDG_DATA_HOME"))
+		  (os (ksm/system-name)))
+	  (env-set-when-null "GOBIN" (file-name-concat xdg-data-home (ksm/system-name) "bin") init-file-debug))
+
+	(env-set-when-null "GOCACHE" (file-name-concat (getenv "XDG_CACHE_HOME") "go-build") init-file-debug)
+	(env-set-when-null "GOMODCACHE" (file-name-concat (getenv "XDG_DATA_HOME") "go" "pkg" "mod") init-file-debug)
+	(env-set-when-null "GOTMPDIR" (file-name-concat (getenv "XDG_CACHE_HOME") "go-tmp") init-file-debug))
+
+  (let ((dir (getenv "GOTMPDIR")))
+	(unless (file-directory-p dir)
+	  (make-directory dir 't)
+	  (message "Created GOTMPDIR: %s" dir)))
+
+  ;; Use gogetdoc as it provides better documentation than godoc and godef.
   (when (executable-find "gogetdoc")
 	(setq godoc-at-point-function #'godoc-gogetdoc))
 
-  ;; Prefer goimports, but use gofmt when goimports not found.
+  ;; Prefer goimports, but when not found, use gofmt.
   (setq gofmt-command (or (executable-find "goimports")
-						  (executable-find "gofmt")
-						  "gofmt"))
+						  (executable-find "gofmt")))
+  (add-hook 'go-mode-hook
+			#'(lambda ()
+				(if (functionp 'eglot-format-buffer)
+					(add-hook 'before-save-hook #'eglot-format-buffer nil t)
+				  (add-hook 'before-save-hook #'gofmt-before-save nil t))))
 
   (when nil
 	;; Fix parsing of error and warning lines in compiler output.
@@ -35,17 +57,7 @@
 	(add-to-list 'compilation-error-regexp-alist 'go-test t)
 	(add-to-list 'compilation-error-regexp-alist 'go-panic t))
 
-  :ensure t
-
-  :hook (go-mode . (lambda ()
-					 (add-hook 'before-save-hook #'eglot-format-buffer nil t)))
-
-  :mode "\\.go\\'"
-
-  ;; This go-mode configuration has at least one customization that depends
-  ;; upon the eglot package, which is now built into Emacs. I am not sure
-  ;; whether :requires implies :after.
-  :requires eglot)
+  :ensure t)
 
 (provide 'setup-golang-mode)
 

@@ -5,6 +5,9 @@
 # Some things only need to be done once when a user logs into the machine. Do
 # that here. Anything else that needs to be done for every individual
 # interactive shell should be placed in ~/.shrc.
+#
+# Initialization done in this file should be considered for inclusion in
+# Emacs' initialization file.
 
 # echo >&2 "$SHELL (login): running $HOME/.profile"
 
@@ -63,8 +66,9 @@ for i in \
 	/opt/local/bin \
 	/opt/local/libexec/gnubin \
 	$HOME/.cargo/bin \
-	$XDG_DATA_HOME/bin \
 	$XDG_DATA_HOME/${os}/bin \
+	$XDG_DATA_HOME/bin \
+	$HOME/bin \
     ; do
     # [ -d "$i" ] && export PATH="${i}:${PATH}" && echo "--> [Y] $i" || echo "--> [N] $i"
     [ -d "$i" ] && export PATH="${i}:${PATH}"
@@ -96,7 +100,7 @@ export VISUAL=emacsclient
 # GOCACHE: The directory where the go command will store cached information
 # for reuse in future builds. (Highly ephemeral data. Access latency
 # prioritized over availability.)
-[ -n "$GOCACHE" ] || export GOCACHE="$TMPDIR/go-build"
+[ -n "$GOCACHE" ] || export GOCACHE="$XDG_CACHE_HOME/go-build"
 
 # GOMODCACHE: The directory where the go command will store downloaded
 # modules. (Once downloaded, should never need to download again. Defaults to
@@ -111,7 +115,7 @@ export VISUAL=emacsclient
 # GOTMPDIR: The directory where the go command will write temporary source
 # files, packages, and binaries. (Highly ephemeral data. Access latency
 # prioritized over availability.)
-[ -n "$GOTMPDIR" ] || export GOTMPDIR="$TMPDIR/go-tmp"
+[ -n "$GOTMPDIR" ] || export GOTMPDIR="$XDG_CACHE_HOME/go-tmp"
 mkdir -p "$GOTMPDIR" # As of Go v1.20, it does not create this directory.
 
 mkdir -p "$XDG_STATE_HOME/history"
