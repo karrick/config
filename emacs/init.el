@@ -407,6 +407,11 @@ If there is no .svn directory, examine if there is CVS and run
 
 (require 'setup-elisp-mode)
 (require 'setup-golang-mode)
+
+(use-package nix-mode
+  :ensure t
+  :mode "\\.nix\\'")
+
 (require 'setup-javascript-mode)
 (require 'setup-python-mode)
 
