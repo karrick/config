@@ -6,17 +6,20 @@
 
 ;; Configure emacs and environment for the Go programming language.
 
-(add-to-list 'auto-mode-alist '("\\.zig\\'" . zig-mode))
+(use-package zig-mode
+  :after eglot
+  :mode "\\.zig\\'"
 
-(when (executable-find "zls")
-  (add-hook 'zig-mode-hook #'lsp-deferred))
-
-(when nil
-  ;; This block sets up buffer scoped configuration and is invoked every time a
-  ;; new zig-mode buffer is created.
+  :config
+  ;; This block sets up buffer scoped configuration and is invoked every time
+  ;; a new zig-mode buffer is created.
   (add-hook 'zig-mode-hook
 			#'(lambda ()
-				(set (make-local-variable 'compile-command) (concat "zig test " (buffer-file-name))))))
+				(set (make-local-variable 'compile-command)
+					 (if t "zig build test"
+					   (concat "zig test " (buffer-file-name))))))
+
+  :ensure t)
 
 (provide 'setup-zig-mode)
 
