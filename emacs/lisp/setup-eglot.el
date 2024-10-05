@@ -30,7 +30,7 @@
   ;; is not yet properly configured on all platforms.
   :hook
   ((
-	;; bash-ts-mode sh-mode
+	bash-ts-mode sh-mode
 	go-mode go-dot-mod-mode go-dot-work-mode go-ts-mode go-mod-ts-mode
 	;; js-mode js-ts-mode
 	python-mode
