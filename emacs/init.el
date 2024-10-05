@@ -289,7 +289,6 @@
 ;; company -- complete anything
 (use-package company
   :after eglot
-  ;; TODO: Investigate flycheck-eglot package.
   :hook (eglot-managed-mode prog-mode text-mode)
   :ensure t)
 
@@ -402,6 +401,13 @@ If there is no .svn directory, examine if there is CVS and run
 		(message "Cannot find 'shellcheck' program.")
 	  (setq flycheck-sh-shellcheck-executable cmd)
 	  (add-hook 'sh-mode-hook 'flycheck-mode))))
+
+(use-package flycheck-eglot
+  :after flycheck eglot
+  :defer t
+  :ensure t
+  :config
+  (global-flycheck-eglot-mode 1))
 
 (add-hook 'markdown-mode-hook #'visual-line-mode)
 
@@ -536,8 +542,7 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(ac-emoji buffer-move company deadgrep default-text-scale eglot flycheck go-mode nix-mode puppet-mode pyvenv rustic shfmt switch-window which-key yasnippet zenburn-theme zig-mode))
- '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
+   '(ac-emoji buffer-move company deadgrep default-text-scale eglot flycheck flycheck-eglot go-mode nix-mode puppet-mode pyvenv rustic shfmt switch-window which-key yasnippet zenburn-theme zig-mode))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
  '(sh-basic-offset 4)
