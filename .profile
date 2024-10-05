@@ -70,8 +70,11 @@ for i in \
 	$XDG_DATA_HOME/bin \
 	$HOME/bin \
     ; do
-    # [ -d "$i" ] && export PATH="${i}:${PATH}" && echo "--> [Y] $i" || echo "--> [N] $i"
-    [ -d "$i" ] && export PATH="${i}:${PATH}"
+	if : ; then
+		[ -d "$i" ] && export PATH="${i}:${PATH}"
+	else
+		[ -d "$i" ] && export PATH="${i}:${PATH}" && echo "--> [Y] $i" || echo "--> [N] $i"
+	fi
 done
 unset i
 
