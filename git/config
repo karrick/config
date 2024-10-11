@@ -2,7 +2,7 @@
     br = branch
     ci = commit
     co = checkout
-    glog = --oneline --decorate --graph
+    glog = log --oneline --decorate --graph
     hl = log --date=short --graph --pretty='tformat:%C(auto)%d%h: %an %ad% s'
     st = status
 
