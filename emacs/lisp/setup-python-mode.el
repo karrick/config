@@ -8,12 +8,6 @@
 							   indent-tabs-mode nil
 							   tab-width 4))))
 
-(use-package python-black
-  :disabled
-  ;; :ensure t
-  ;; :hook (python-mode . python-black-on-save-mode-enable-dwim)
-  :when (executable-find "black"))
-
 (use-package pyvenv
   :config
   (pyvenv-mode t)
