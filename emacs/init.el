@@ -542,7 +542,7 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(ac-emoji buffer-move company deadgrep default-text-scale eglot flycheck flycheck-eglot go-mode nix-mode puppet-mode pyvenv rustic shfmt switch-window which-key yasnippet zenburn-theme zig-mode))
+   '(ac-emoji buffer-move company deadgrep default-text-scale eglot flycheck flycheck-eglot go-mode nix-mode puppet-mode pyvenv rustic shfmt switch-window unfill which-key yasnippet zenburn-theme zig-mode))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
  '(sh-basic-offset 4)

@@ -42,7 +42,7 @@ elif [ "$TMPDIR" = "${TMPDIR%${LOGNAME}}" ] ; then
     export TMPDIR="${TMPDIR%/}/$LOGNAME"
 fi
 mkdir -p "$TMPDIR"
-echo "Feel free to erase this directory and all of its contents." > "$TMPDIR/README.txt"
+echo "Feel free to erase this directory and all of its contents." > "$TMPDIR/DELETE-THIS-DIRECTORY-IF-TOO-LARGE.txt"
 
 # https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
 # https://xdgbasedirectoryspecification.com
