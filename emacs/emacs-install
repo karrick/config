@@ -5,7 +5,7 @@
 set -e
 
 basename=$(basename "$0")
-defaultRelease=29.4
+defaultRelease=30.1
 
 [ -n "$XDG_DOWNLOAD_DIR" ] || XDG_DOWNLOAD_DIR="$HOME/Downloads"
 [ -d "$XDG_DOWNLOAD_DIR" ] || mkdir -p "$XDG_DOWNLOAD_DIR"
@@ -40,20 +40,38 @@ done
 # The OS affects installation location and libraries that need to be
 # installed.
 os=$(uname -s | tr A-Z a-z)
+arch=$(uname -m)
 
 # Linux has a few variants that change the packages one must install, and the
 # command used to install those packages.
 if [ "$os" = "linux" ] ; then
-	if [ -f /etc/redhat-release ] ; then
-		# Different el major releases have different commands to use.
-		os=el$(awk '{for(i=0;i<NF;i++) if($i == "release"){print $(i+1);exit}}' /etc/redhat-release | cut -d. -f1)
-	elif [ -f /etc/debian-release ] ; then
+	# OS-specific compiled binaries
+	if [ -r /etc/os-release ] ; then
+		# echo >&2 "/etc/os-release found"
+		# ID_LIKE=debian
+		# ID_LIKE="fedora"
+		like=$(awk -F= '/ID_LIKE/ {print $2}' /etc/os-release | tr -d \")
+
+		case $like in
+			debian)
+				os=$like$(awk -F= '/VERSION_ID/ {print $2}' /etc/os-release | tr -d \" | cut -d. -f1)
+				;;
+			fedora)
+				os=$like$(awk -F= '/VERSION_ID/ {print $2}' /etc/os-release | tr -d \" | cut -d. -f1)
+				;;
+			*)
+				# echo >&2 "like: UNKNOWN"
+				:
+				;;
+		esac
+	elif [ -f /etc/debian-release ] || [ -f /etc/debian_version ] ; then
+		# echo >&2 "/etc/debian-release or /etc/debian_version found"
 		os=debian
 	fi
 fi
 
 [ -n "$XDG_DATA_HOME" ] || XDG_DATA_HOME="$HOME/.local/share" # Application Data: /usr/share
-config="--prefix=$XDG_DATA_HOME/${os}"
+config="--prefix=$XDG_DATA_HOME/${os}/${arch}"
 
 if [ -n "$tiny" ] ; then
 	# Disables most library support, but still builds with X.
@@ -69,8 +87,8 @@ fi
 # operating system.
 case $os in
 	darwin)  packages="$packages xz" ;;
-	debian)  : ;; # do not error when no base packages required
-	el?)     : ;; # do not error when no base packages required
+	debian*) packages="$packages texinfo" ;;
+	fedora*) packages="$packages texinfo" ;;
 	freebsd) packages="$packages $(pkg rquery %dn emacs-devel)" ;;
 	openbsd) packages="$packages gmake" ;;
 	*)       echo >&2 "WARNING: no base packages defined: $os" ;;
@@ -79,37 +97,40 @@ esac
 if [ -n "$with_native_compilation" ] ; then
 	# libgccjit: Library for embedding GCC inside programs and libraries
 	case $os in
-		el?) packages="$packages libgccjit libgccjit-devel zlib zlib-devel" ;;
-		*)   echo >&2 "WARNING: no native-compilation packages defined: $os" ;;
+		fedora*) packages="$packages libgccjit libgccjit-devel zlib zlib-devel" ;;
+		debian*) packages="$packages libgccjit0 libgccjit14-dev" ;;
+		*)       echo >&2 "WARNING: no native-compilation packages defined: $os" ;;
 	esac
 
 	# Optionally perform native compilation of Emacs source lisp files after
 	# Emacs itself is built.
 	config="$config --with-native-compilation=aot --with-zlib"
 else
-	config="$config --without-native-compilation"
+	# config="$config --without-native-compilation" # 29
+	config="$config --with-native-compilation=no" # 30.1
 fi
 
-if [ -n "$with_native_json" ] ; then
-	# jansson: Small library for parsing and writing JSON documents.
-	case $os in
-		darwin)  packages="$packages jansson" ;;
-		debian)  packages="$packages libjansson-dev" ;;
-		el?)     packages="$packages jansson jansson-devel" ;;
-		freebsd) packages="$packages jansson" ;;
-		openbsd) packages="$packages jansson" ;;
-		*)       echo >&2 "WARNING: no jansson packages defined: $os" ;;
-	esac
-	config="$config --with-json"
-else
-	config="$config --without-json"
-fi
+# The below not needed 30.1 and after:
+# if [ -n "$with_native_json" ] ; then
+# 	# jansson: Small library for parsing and writing JSON documents.
+# 	case $os in
+# 		darwin)  packages="$packages jansson" ;;
+# 		debian*) packages="$packages libjansson-dev" ;;
+# 		fedora*) packages="$packages jansson jansson-devel" ;;
+# 		freebsd) packages="$packages jansson" ;;
+# 		openbsd) packages="$packages jansson" ;;
+# 		*)       echo >&2 "WARNING: no jansson packages defined: $os" ;;
+# 	esac
+# 	config="$config --with-json"
+# else
+# 	config="$config --without-json"
+# fi
 
 if [ -n "$with_tree_sitter" ] ; then
 	# tree-sitter: Incremental parsing library for programming tools
 	case $os in
-		el?) packages="$packages libtree-sitter libtree-sitter-devel" ;;
-		*)   echo >&2 "WARNING: no tree-sitter packages defined: $os" ;;
+		fedora*) packages="$packages libtree-sitter libtree-sitter-devel" ;;
+		*)       echo >&2 "WARNING: no tree-sitter packages defined: $os" ;;
 	esac
 	config="$config --with-tree-sitter"
 else
@@ -119,7 +140,8 @@ fi
 # gnutls: GNU Transport Layer Security Library
 case $os in
 	darwin)  packages="$packages gnutls-devel" ;;
-	el?)     packages="$packages gnutls gnutls-devel" ;;
+	debian*) packages="$packages libgnutls28-dev" ;;
+	fedora*) packages="$packages gnutls gnutls-devel" ;;
 	freebsd) packages="$packages gnutls" ;;
 	openbsd) packages="$packages gnutls" ;;
 	*)       echo >&2 "WARNING: no gnutls packages defined: $os" ;;
@@ -128,7 +150,8 @@ esac
 # ncurses: terminal independent library
 case $os in
 	darwin)  packages="$packages ncurses" ;;
-	el?)     packages="$packages ncurses ncurses-devel" ;;
+	debian*) packages="$packages libncurses-dev" ;;
+	fedora*) packages="$packages ncurses ncurses-devel" ;;
 	freebsd) packages="$packages ncurses" ;;
 	*)       echo >&2 "WARNING: no ncurses packages defined: $os" ;;
 esac
@@ -139,7 +162,7 @@ if [ -n "$with_x_toolkit" ] ; then
 	# which graphics framework is to be used.
 	case $os in
 		darwin)  packages="$packages librsvg" ;;
-		el?)     packages="$packages giflib giflib-devel harfbuzz harfbuzz-devel libX11-devel libXpm-devel libjpeg libjpeg-devel libpng-devel librsvg2 librsvg2-devel libtiff-devel openjpeg2-devel" ;;
+		fedora*) packages="$packages giflib giflib-devel harfbuzz harfbuzz-devel libX11-devel libXpm-devel libjpeg libjpeg-devel libpng-devel librsvg2 librsvg2-devel libtiff-devel openjpeg2-devel" ;;
 		openbsd) : ;;
 		*)       echo >&2 "WARNING: no graphics packages defined for: $os" ;;
 	esac
@@ -149,15 +172,15 @@ if [ -n "$with_x_toolkit" ] ; then
 	case $with_x_toolkit in
 		athena|lucid)
 			case $os in
-				el?) packages="$packages libXaw libXaw-devel" ;;
-				*)   echo >&2 "WARNING: no lucid packages defined for: $os" ;;
+				fedora*) packages="$packages libXaw libXaw-devel" ;;
+				*)       echo >&2 "WARNING: no lucid packages defined for: $os" ;;
 			esac
 			config="$config --without-toolkit-scroll-bars"
 			;;
 		gtk)
 			case $os in
-				el?) packages="$packages gtk2 gtk2-devel" ;;
-				*)   echo >&2 "WARNING: no gtk packages defined for: $os" ;;
+				fedora*) packages="$packages gtk2 gtk2-devel" ;;
+				*)       echo >&2 "WARNING: no gtk packages defined for: $os" ;;
 			esac
 			;;
 		motif)
@@ -174,7 +197,7 @@ if [ -n "$with_x_toolkit" ] ; then
 else
 	config="$config --without-x"
 	case $os in
-		darwin)  config="$config --without-ns" ;;
+		darwin) config="$config --without-ns" ;;
 	esac
 fi
 
@@ -196,16 +219,16 @@ if [ -n "$deps" ] && [ -n "$packages" ] ; then
 		darwin)
 			sudo port install $packages
 			;;
-		debian)
+		debian*)
 			sudo apt-get install build-essential
 			sudo apt-get build-dep emacs
 			sudo apt-get install $packages
 			;;
-		el7)
+		fedora7)
 			sudo yum-builddep emacs
 			sudo yum install $packages
 			;;
-		el8)
+		fedora8)
 			: sudo dnf builddep emacs
 			sudo dnf install $packages
 			;;
@@ -237,7 +260,7 @@ if [ ! -f "$bundle_local" ] ; then
 	curl -L --create-dirs --output "$bundle_local" "http://ftp.gnu.org/gnu/emacs/$bundle"
 fi
 
-if which gpg >/dev/null 2>&1 ; then
+if false && which gpg >/dev/null 2>&1 ; then
 	keyring=gnu-keyring.gpg
 	keyring_local=$XDG_DOWNLOAD_DIR/$keyring
 	if [ ! -f "$keyring_local" ] ; then
@@ -304,8 +327,6 @@ if [ "$code" -ne 0 ] ; then
 	exit $code
 fi
 
-# exit 13
-
 echo >&2 "################ Compiling..."
 make
 code=$?
@@ -322,9 +343,13 @@ if [ "$code" -ne 0 ] ; then
 	exit $code
 fi
 
-if [ "$os" == "darwin" ] ; then
+if [ "$os" = "darwin" ] ; then
 	echo >&2 "################ Moving to /Applications..."
 	sudo mv nextstep/Emacs.app /Applications
 fi
+
+case $os in
+	darwin) sudo /usr/bin/codesign --force --deep --sign - /Applications/MacPorts/Emacs.app ;;
+esac
 
 echo >&2 "################ Installation successful."
