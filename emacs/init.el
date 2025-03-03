@@ -239,6 +239,8 @@
 
   (add-hook 'shell-mode-hook
 			#'(lambda ()
+				;; (setenv "ETERM" (getenv-internal "TERM" initial-environment)) ; hack to make original term available to inferior shells
+
 				;; Disable font-locking in this buffer to improve
 				;; performance
 				(font-lock-mode 0)
