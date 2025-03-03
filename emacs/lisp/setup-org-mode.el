@@ -65,6 +65,7 @@
 						"DONE(d)"
 						"CANCELLED(c)"
 						"DELEGATED(g)"
+						"RESOLVED(r)"
 						))
 					 "TODO DOCUMENT")
 
