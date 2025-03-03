@@ -20,6 +20,34 @@ fi
 
 # echo >&2 "$SHELL (interactive): running $HOME/.shrc: ($_SHELL)"
 
+# https://www.gnu.org/software/screen/manual/html_node/Control-Sequences.html
+set_gnu_screen_hardstatus_line () { printf "\e_%s\e\\" "$*"; } # Application Program Command (xterm window title also sets this)
+set_gnu_screen_window_title () { printf "\ek%s\e\\" "$*"; }	   # Title Definition String
+
+# https://www.man7.org/linux/man-pages/man4/console_codes.4.html
+# ESC ] 0 ; txt ST Set icon name and window title to txt
+# ESC ] 1 ; txt ST Set icon name to txt
+# ESC ] 2 ; txt ST Set window title to txt
+set_xterm_window_title () { printf "\e]0;%s\e\\" "$*"; }
+
+set_title_with_dirs ()
+{
+	case $TERM in
+		gnome* | rxvt | tmux* | vt100 | xterm*)
+			# append cwd enclosed in parens
+			set_xterm_window_title "$* ($(dirs))"
+			;;
+		screen*)
+			# use extra hardstatus line for dirs, instead of combining
+			set_gnu_screen_hardstatus_line "$(dirs)"
+			set_gnu_screen_window_title "$@"
+			;;
+		*)
+			echo >&2 "set_title_with_dirs: cannot recognize TERM: [$TERM]"
+			;;
+	esac
+}
+
 case $_SHELL in
 	bash)
 		# check the window size after each command and, if necessary,
@@ -41,55 +69,63 @@ case $_SHELL in
 		fi
 
 		function osc_seven_hostname_pwd () {
-			printf "\e]7;file://%s%s\e\\" "$HOSTNAME" "$PWD"
+			# https://www.man7.org/linux/man-pages/man4/console_codes.4.html
+			printf "\e]0;%s@%s:%s\e\\" "$LOGNAME" "$HOSTNAME" "$(dirs)"
+			# https://github.com/maconcg/osc7
+			printf "\e]7;file://%s%s\e\\" "$HOSTNAME" "$PWD" # Report Working Directory
 		}
 		PROMPT_COMMAND=osc_seven_hostname_pwd
 
-		if [ -n "$NOCOLOR" ] ; then
-			PS0='# START: \D{%F}T\D{%T}\D{%Z}\n'
-			PS1='# FINISH: \D{%F}T\D{%T}\D{%Z} [$?\]]\n# \u@\H:\w\n\$ '
-		else
-			case color in
-				color)
-					PS0='\[\e[2m\]# START: \D{%F}T\D{%T}\D{%Z}\[\e[22m\]\n'
-					PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n$ '
-					;;
-				fancy)
-					PS0='\[\e[2m\]# START: \D{%F}T\D{%T}\D{%Z}\[\e[22m\]\n'
+		# Default to color shell prompt, allowing user to switch with
+		# 'shell_prompt_no_color' shell function.
+		case color in
+			color)
+				PS0='\[\e[2m\]# START: \D{%F}T\D{%T}\D{%Z}\[\e[22m\]\n'
+				PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n$ '
+				;;
+			fancy)
+				PS0='\[\e[2m\]# START: \D{%F}T\D{%T}\D{%Z}\[\e[22m\]\n'
 
-					if [ -n "$HOSTPROMPT" ] ; then
-						PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]${HOSTPROMPT}\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n'
-					else
-						PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n'
-					fi
+				if [ -n "$HOSTPROMPT" ] ; then
+					PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]${HOSTPROMPT}\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n'
+				else
+					PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n'
+				fi
 
-					if which git_prompt >/dev/null 2>&1 ; then
-						PS1="${PS1}\[\e[35m\]\$(git_prompt)\[\e[39m\]"
-					fi
+				if which git_prompt >/dev/null 2>&1 ; then
+					PS1="${PS1}\[\e[35m\]\$(git_prompt)\[\e[39m\]"
+				fi
 
-					PS1="${PS1}\$ "
-					;;
-			esac
-		fi
-
+				PS1="${PS1}\$ "
+				;;
+			*)
+				PS0='# START: \D{%F}T\D{%T}\D{%Z}\n'
+				PS1='# FINISH: \D{%F}T\D{%T}\D{%Z} [$?\]]\n# \u@\H:\w\n\$ '
+				;;
+		esac
 		;;
 
 	ksh|sh) : ;;
 
 	zsh)
-		if [ -n "$NOCOLOR" ] ; then
-			function preexec () {
-				printf "\e]7;file://%s%s\a" "$HOSTNAME" "$PWD"
-				printf "# START: %s\n" "$(date +%FT%T%Z)"
-			}
-			PROMPT=$'# FINISH: %D{%FT%T%Z} [%(?,0,%?)]%{\n%}# m%n@%M:%~%{\n%}%# '
-		else
-			function preexec () {
-				printf "\e]7;file://%s%s\a" "$HOSTNAME" "$PWD"
-				printf "\e[2m# START: %s\e[22m\n" "$(date +%FT%T%Z)"
-			}
-			PROMPT=$'\e[2m# FINISH: %D{%FT%T%Z}\e[22m [%(?,\e[32m0\e[39m,\e[1;31m%?\e[22;39m)]%{\n%}# \e[32m%n\e[39m@\e[36m%M\e[39m:\e[33m%~\e[39m%{\n%}%# '
-		fi
+		# Default to color shell prompt, allowing user to switch with
+		# 'shell_prompt_no_color' shell function.
+		case color in
+			*color)
+				function preexec () {
+					printf "\e]7;file://%s%s\a" "$HOSTNAME" "$PWD" # Report Working Directory
+					printf "\e[2m# START: %s\e[22m\n" "$(date +%FT%T%Z)"
+				}
+				PROMPT=$'\e[2m# FINISH: %D{%FT%T%Z}\e[22m [%(?,\e[32m0\e[39m,\e[1;31m%?\e[22;39m)]%{\n%}# \e[32m%n\e[39m@\e[36m%M\e[39m:\e[33m%~\e[39m%{\n%}%# '
+				;;
+			*)
+				function preexec () {
+					printf "\e]7;file://%s%s\a" "$HOSTNAME" "$PWD" # Report Working Directory
+					printf "# START: %s\n" "$(date +%FT%T%Z)"
+				}
+				PROMPT=$'# FINISH: %D{%FT%T%Z} [%(?,0,%?)]%{\n%}# m%n@%M:%~%{\n%}%# '
+				;;
+		esac
 		;;
 
 	*) echo >&2 "unrecognized shell: '${_SHELL}'" ;;
@@ -98,7 +134,7 @@ esac
 [ "$_SHELL" = "sh" ] || hrg() { ( cd "$XDG_STATE_HOME/history" && exec rg "$*" ) }
 
 # Make less more friendly for non-text input files, see lesspipe(1).
-[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh /usr/bin/lesspipe)"
 
 alias clip='xclip -selection clipboard'
 alias dfs='df -lh -x devtmpfs -x tmpfs --output=source,ipcent,size,used,avail,pcent,target'
@@ -133,26 +169,9 @@ mac2unix () { tr '\r' '\n' <"$1" >"$2" ; }
 unix2mac () { tr '\n' '\r' <"$1" >"$2" ; }
 unix2dos () { ruby -pe '$_=$_.gsub(/$/, "\r")' <"$1" >"$2" ; }
 
-set_gnu_screen_hardstatus_line () { printf "\e_%s\e\\" "$*"; }
-set_gnu_screen_window_title () { printf "\ek%s\e\\" "$*"; }
-set_xterm_window_title () { printf "\e]0;%s\007" "$*"; }
-
-set_title ()
-{
-	local title=$1
-	case $TERM in
-		xterm* | gnome* | vt100 | rxvt)
-			# append cwd enclosed in parens
-			set_xterm_window_title "$title ($(pwd))"
-			;;
-		screen)
-			# use extra hardstatus line for dirs, instead of combining
-			set_gnu_screen_hardstatus_line "$(dirs)"
-			set_gnu_screen_window_title "$title"
-			;;
-		*)
-			;;
-	esac
+shell_prompt_no_color() {
+	PS0='# START: \D{%F}T\D{%T}\D{%Z}\n'
+	PS1='# FINISH: \D{%F}T\D{%T}\D{%Z} [$?\]]\n# \u@\H:\w\n\$ '
 }
 
 [ ! -r "$HOME/.cargo/env" ] || . "$HOME/.cargo/env"

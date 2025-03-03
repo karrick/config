@@ -15,19 +15,52 @@
 # logins, install and configure the libpam-umask package.
 umask 022
 
+# # https://stackoverflow.com/questions/48574369/setting-term-variable-for-emacs-shell
+# case ${INSIDE_EMACS#*,} in
+#	comint) echo >&2 "INSIDE_EMACS: comint" ;;
+#	tramp) echo >&2 "INSIDE_EMACS: tramp" ;;
+#	"") : ;; # echo >&2 "Not INSIDE_EMACS" ;;
+#	*) echo >&2 "INSIDE_EMACS: [$INSIDE_EMACS]" ;;
+# esac
+
 # Determine OS and add OS specific PATH if present
-os=$(uname -s | tr '[:upper:]' '[:lower:]')
+os=$(uname -s | tr A-Z a-z)
+# echo >&2 "os: [$os]"
+
+# Determine architecture
+arch=$(uname -m)
+# echo >&2 "arch: [$arch]"
 
 # Linux has a few variants that change the packages one must install, and the
 # command used to install those packages.
 if [ "$os" = "linux" ] ; then
-    # OS-specific compiled binaries
-    if [ -r /etc/os-release ] ; then
-		os=el$(awk -F\" '/VERSION_ID/ {print $2}' /etc/os-release | cut -d. -f1)
-    elif [ -f /etc/debian-release ] ; then
+	# OS-specific compiled binaries
+	if [ -r /etc/os-release ] ; then
+		# echo >&2 "/etc/os-release found"
+		# ID_LIKE=debian
+		# ID_LIKE="fedora"
+		like=$(awk -F= '/ID_LIKE/ {print $2}' /etc/os-release | tr -d \")
+
+		case $like in
+			debian)
+				os=$like$(awk -F= '/VERSION_ID/ {print $2}' /etc/os-release | tr -d \" | cut -d. -f1)
+				;;
+			fedora)
+				os=$like$(awk -F= '/VERSION_ID/ {print $2}' /etc/os-release | tr -d \" | cut -d. -f1)
+				;;
+			*)
+				# echo >&2 "like: UNKNOWN"
+				:
+				;;
+		esac
+	elif [ -f /etc/debian-release ] || [ -f /etc/debian_version ] ; then
+		# echo >&2 "/etc/debian-release or /etc/debian_version found"
 		os=debian
-    fi
+	fi
 fi
+
+# echo >&2 "os: [$os]"
+# if : ; then return ; fi
 
 # To prioritize access latency over availability, ensure that highly ephemeral
 # cache data is stored on local machine rather than a home directory that is
@@ -35,11 +68,11 @@ fi
 # directory that makes it trivial to identify the owner and optionally remove
 # all cache data.
 if [ -z "$TMPDIR" ] ; then
-    export TMPDIR="/var/tmp/$LOGNAME"
+	export TMPDIR="/var/tmp/$LOGNAME"
 elif [ "$TMPDIR" = "${TMPDIR%${LOGNAME}}" ] ; then
 	# NOTE: The below removes any trailing "/" character at the end of TMPDIR
 	# before appending the account name.
-    export TMPDIR="${TMPDIR%/}/$LOGNAME"
+	export TMPDIR="${TMPDIR%/}/$LOGNAME"
 fi
 mkdir -p "$TMPDIR"
 echo "Feel free to erase this directory and all of its contents." > "$TMPDIR/DELETE-THIS-DIRECTORY-IF-TOO-LARGE.txt"
@@ -58,52 +91,107 @@ echo "Feel free to erase this directory and all of its contents." > "$TMPDIR/DEL
 # their PATH environment variable, to allow the user to specify which exact
 # path to each program they might need to override.
 
-# echo INITIAL PATH
+# echo >&2 INITIAL PATH
 # echo $PATH | tr : '\n' >&2
+PATH0=$PATH
+PATH=
 
 for i in \
-	/opt/local/sbin \
-	/opt/local/bin \
-	/opt/local/libexec/gnubin \
-	$HOME/.cargo/bin \
-	$XDG_DATA_HOME/${os}/bin \
-	$XDG_DATA_HOME/bin \
-	$HOME/bin \
-    ; do
+		$HOME/bin \
+		$XDG_DATA_HOME/${os}/${arch}/bin \
+		$XDG_DATA_HOME/${os}/bin \
+		$XDG_DATA_HOME/${arch}/bin \
+		$XDG_DATA_HOME/bin \
+		$HOME/.cargo/bin \
+		/opt/local/sbin \
+		/opt/local/libexec/gnubin \
+		/opt/local/bin \
+		/usr/sbin \
+		/usr/bin \
+		/sbin \
+		/bin \
+	; do
 	if : ; then
-		[ -d "$i" ] && export PATH="${i}:${PATH}"
+		[ -d "$i" ] && PATH="${PATH}${PATH:+:}${i}"
 	else
-		[ -d "$i" ] && export PATH="${i}:${PATH}" && echo "--> [Y] $i" || echo "--> [N] $i"
+		[ -d "$i" ] && PATH="${PATH}${PATH:+:}${i}" && echo "--> [Y] $i" || echo "--> [N] $i"
 	fi
 done
-unset i
 
-# No need to search directories multiple times: Omit duplicate entries from
-# PATH, but keep items in the same relative order.
-export PATH="$(echo "$PATH" | awk 'BEGIN { FS=":"; ORS="" } { for (i=1; i<=NF; i++) if (foo[$i] != 1) { if (i>1) print ":"; print $i; foo[$i]=1 } }')"
+export PATH
+# echo >&2 "PATH:"
+# echo $PATH | tr : '\n' >&2
+
+# Track components from original PATH that are not in custom PATH, removing
+# duplicates, but leaving elements in same relative order.
+PATH_ADDITIONS=$(echo "$PATH0" | awk -v drop=$PATH '
+BEGIN {
+	  FS=":";
+	  c = split(drop, drop_list);
+	  for (i=1; i<=c; i++) items[drop_list[i]] = 1;
+	  ORS="";
+}
+
+{
+	for (i=1; i<=NF; i++)
+		if ($i != "" && items[$i] != 1) {
+		   if (pc == 0) pc=1; else print ":";
+		   print $i;
+		   items[$i]=1;
+		}
+}')
+# echo >&2 "PATH_ADDITIONS: [$PATH_ADDITIONS]"
 
 unset MANPATH
-export MANPATH=$(echo "$PATH" | tr : '\n' | (while read -r p ; do
-												 for mp in "${p%/*}/man" "${p%/*}/share/man"; do
-													 if [ -d "$mp" ] && [ "$MANPATH" = "${MANPATH%${mp}*}" ] ; then
+export MANPATH=$(echo "$PATH" | tr : '\n' | (while read -r i ; do
+												 for mp in "${i%/*}/man" "${i%/*}/share/man"; do
+													 if [ "$MANPATH" = "${MANPATH%${mp}*}" ] && [ -d "$mp" ] ; then
 														 MANPATH="${MANPATH:+$MANPATH:}${mp}"
 													 fi
 												 done
 											 done ; echo "$MANPATH"))
+# echo >&2 "MANPATH: [$MANPATH]"
 
-# echo >&2 "MANPATH: $MANPATH"
+MANPATH_ADDITIONS=$(echo "$PATH_ADDITIONS" | tr : '\n' | (while read -r i ; do
+												 for mp in "${i%/*}/man" "${i%/*}/share/man"; do
+													 if [ -d "$mp" ] && [ "$MANPATH_ADDITIONS" = "${MANPATH_ADDITIONS%${mp}*}" ] ; then
+														 MANPATH_ADDITIONS="${MANPATH_ADDITIONS:+$MANPATH_ADDITIONS:}${mp}"
+													 fi
+												 done
+											 done ; echo "$MANPATH_ADDITIONS"))
+# echo >&2 "MANPATH_ADDITIONS: [$MANPATH_ADDITIONS]"
+
+PATH_CLEAN=$PATH
+MANPATH_CLEAN=$MANPATH
+
+path_clean() {
+	export PATH=$PATH_CLEAN
+	export MANPATH=$MANPATH_CLEAN
+	path_additions() {
+		export PATH="${PATH}:${PATH_ADDITIONS}"
+		export MANPATH="${MANPATH}:${MANPATH_ADDITIONS}"
+		path_additions() {
+			echo >&2 "path additions already added..."
+		}
+	}
+}
+
+path_clean
+
+unset PATH0
+unset i
 
 export EDITOR=emacsclient
 export VISUAL=emacsclient
 
 # GOBIN: The directory where 'go install' will install a command. (To allow
 # sharing among different machines, places in HOME.)
-[ -n "$GOBIN" ] || export GOBIN="$XDG_DATA_HOME/${os}/bin"
+[ -n "$GOBIN" ] || export GOBIN="$XDG_DATA_HOME/${os}/${arch}/bin"
 
 # GOCACHE: The directory where the go command will store cached information
 # for reuse in future builds. (Highly ephemeral data. Access latency
 # prioritized over availability.)
-[ -n "$GOCACHE" ] || export GOCACHE="$XDG_CACHE_HOME/go-build"
+[ -n "$GOCACHE" ] || export GOCACHE="$XDG_CACHE_HOME/${os}/${arch}/go-build"
 
 # GOMODCACHE: The directory where the go command will store downloaded
 # modules. (Once downloaded, should never need to download again. Defaults to
@@ -118,7 +206,7 @@ export VISUAL=emacsclient
 # GOTMPDIR: The directory where the go command will write temporary source
 # files, packages, and binaries. (Highly ephemeral data. Access latency
 # prioritized over availability.)
-[ -n "$GOTMPDIR" ] || export GOTMPDIR="$XDG_CACHE_HOME/go-tmp"
+[ -n "$GOTMPDIR" ] || export GOTMPDIR="$XDG_CACHE_HOME/${os}/${arch}/go-tmp"
 mkdir -p "$GOTMPDIR" # As of Go v1.20, it does not create this directory.
 
 mkdir -p "$XDG_STATE_HOME/history"
@@ -129,41 +217,41 @@ export HISTSIZE=2000
 unset os
 
 if test -n "$BASH_VERSION" ; then
-    _SHELL="bash"
+	_SHELL="bash"
 elif test -n "$KSH_VERSION" ; then
-    _SHELL="ksh"
+	_SHELL="ksh"
 elif test -n "$ZSH_VERSION" ; then
-    _SHELL="zsh"
+	_SHELL="zsh"
 elif test -z "$PS3" ; then
-    _SHELL="sh"
+	_SHELL="sh"
 else
-    _SHELL="unknown"
+	_SHELL="unknown"
 fi
 
 case $_SHELL in
-    bash)
+	bash)
 		# /bin/bash only invokes $BASH_ENV when non-interactive, while /bin/sh
 		# and /bin/ksh only invoke $ENV when interactive. The goal is to
 		# enable re-use of ~/.profile and ~/.shrc for both /bin/sh, /bin/bash,
 		# /bin/ksh, and potentially other command line shells.
 		[ ! -r "$HOME/.shrc" ] || . "$HOME/.shrc"
 		;;
-    ksh|sh)
+	ksh|sh)
 		# /bin/ksh and /bin/sh merely need $ENV to be defined and point to the
 		# desired file to run for interactive shells.
 		[ ! -r "$HOME/.shrc" ] || export ENV="$HOME/.shrc"
 		;;
-    zsh)
+	zsh)
 		# Zsh will invoke ~/.zshenv for all shells, then invoke ~/.zprofile
 		# for all login shells, then ~/.zshrc for all interactive shells. It
 		# is sufficient to create symbolic links to obtain similar behavior as
 		# other shells which are special cased above.
-		# 
+		#
 		#     ln -s .profile .zprofile
 		#     ln -s .shrc    .zshrc
 		:
 		;;
-    *) echo >&2 "unrecognized shell: '${_SHELL}'" ;;
+	*) echo >&2 "unrecognized shell: '${_SHELL}'" ;;
 esac
 
 # No operations follow the above in this file, to ensure behavior on /bin/sh
