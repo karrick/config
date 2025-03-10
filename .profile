@@ -36,26 +36,7 @@ arch=$(uname -m)
 if [ "$os" = "linux" ] ; then
 	# OS-specific compiled binaries
 	if [ -r /etc/os-release ] ; then
-		# echo >&2 "/etc/os-release found"
-		# ID_LIKE=debian
-		# ID_LIKE="fedora"
-		like=$(awk -F= '/ID_LIKE/ {print $2}' /etc/os-release | tr -d \")
-
-		case $like in
-			debian)
-				os=$like$(awk -F= '/VERSION_ID/ {print $2}' /etc/os-release | tr -d \" | cut -d. -f1)
-				;;
-			fedora)
-				os=$like$(awk -F= '/VERSION_ID/ {print $2}' /etc/os-release | tr -d \" | cut -d. -f1)
-				;;
-			*)
-				# echo >&2 "like: UNKNOWN"
-				:
-				;;
-		esac
-	elif [ -f /etc/debian-release ] || [ -f /etc/debian_version ] ; then
-		# echo >&2 "/etc/debian-release or /etc/debian_version found"
-		os=debian
+		os=$(awk -F= < /etc/os-release '/ID|VERSION_ID/ {s=$2 ; if ("\"" == substr(s, 1, 1)) s = substr(s, 2) ; if ("\"" == substr(s, length(s))) s = substr(s, 1, length(s)-1) ; arr[$1] = s} END {printf("%s%s\n", arr["ID"], arr["VERSION_ID"])}' | cut -d. -f1)
 	fi
 fi
 
