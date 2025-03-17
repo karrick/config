@@ -13,7 +13,7 @@ defaultRelease=30.1
 usage() {
 	code=0
 	[ $# -eq 0 ] || echo >&2 "$basename: $*" && code=2
-	echo "USAGE: $basename [--deps] [--dry-run] [--gpg-if-available] [--help] [--release X.Y] [--tiny] [--with-native-compilation] [--with-tree-sitter] [--with-x-toolkit athena|gtk|lucid]"
+	echo "USAGE: $basename [--deps] [--dry-run] [--gpg-if-available] [--help] [--release X.Y] [--tiny] [--with-gnu-tls-if-available] [--with-native-compilation] [--with-tree-sitter] [--with-x-toolkit athena|gtk|lucid]"
 	exit $code
 }
 
@@ -21,18 +21,19 @@ validate() { [ $# -ge 2 ] || usage "missing option argument: '$1'" ; }
 
 while [ $# -ne 0 ] ; do
 	case $1 in
-		--deps)                                    deps=1                    ; shift   ;;
-		--dry-run)                                 dry_run=1                 ; shift   ;;
-		--gpg-if-available)                        gpg_if_available=1        ; shift   ;;
-		--help)                    usage                                               ;;
-		--release)                 validate "$@" ; release=$2                ; shift 2 ;;
-		--tiny)                                    tiny=1                    ; shift   ;;
+		--deps)                                    deps=1                      ; shift   ;;
+		--dry-run)                                 dry_run=1                   ; shift   ;;
+		--gpg-if-available)                        gpg_if_available=1          ; shift   ;;
+		--help)                    usage                                                 ;;
+		--release)                 validate "$@" ; release=$2                  ; shift 2 ;;
+		--tiny)                                    tiny=1                      ; shift   ;;
 		#
-		--with-native-compilation)                 with_native_compilation=1 ; shift   ;;
-		--with-tree-sitter)                        with_tree_sitter=1        ; shift   ;;
-		--with-x-toolkit)          validate "$@" ; with_x_toolkit=$2         ; shift 2 ;;
-		#
-		*)                         usage "illegal argument: $1"                        ;;
+		--with-gnu-tls-if-available)               with_gnu_tls_if_available=1 ; shift   ;;
+		--with-native-compilation)                 with_native_compilation=1   ; shift   ;;
+		--with-tree-sitter)                        with_tree_sitter=1          ; shift   ;;
+		--with-x-toolkit)          validate "$@" ; with_x_toolkit=$2           ; shift 2 ;;
+		#																	   
+		*)                         usage "illegal argument: $1"                          ;;
 	esac
 done
 
@@ -110,6 +111,9 @@ case $os in
 	openbsd)         packages="$packages gnutls" ;;
 	*)               echo >&2 "WARNING: no gnutls packages defined: $os" ;;
 esac
+if [ -n "$with_gnu_tls_if_available" ] ; then
+	config="$config --with-gnutls=ifavailable"
+fi
 
 # ncurses: terminal independent library
 case $os in
