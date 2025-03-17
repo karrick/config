@@ -27,11 +27,6 @@
 	(message "native-compilation is available")
   (message "native-compilation is *not* available"))
 
-(if (and (functionp 'json-serialize)
-		 (json-serialize nil))
-	(message "native-json is available")
-  (message "native-json is *not* available"))
-
 ;; When running in daemon mode, change process directory to user home
 ;; directory.
 (if (daemonp) (cd (expand-file-name "~")))
@@ -543,8 +538,7 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("nongnu" . "https://elpa.nongnu.org/nongnu/")
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
- '(package-selected-packages
-   '(ac-emoji buffer-move company deadgrep default-text-scale eglot flycheck flycheck-eglot go-mode nix-mode puppet-mode pyvenv rustic shfmt switch-window unfill which-key yasnippet zenburn-theme zig-mode))
+ '(package-selected-packages nil)
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
  '(sh-basic-offset 4)

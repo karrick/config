@@ -13,7 +13,7 @@ defaultRelease=30.1
 usage() {
 	code=0
 	[ $# -eq 0 ] || echo >&2 "$basename: $*" && code=2
-	echo "USAGE: $basename [--deps] [--dry-run] [--gpg-if-available] [--help] [--release X.Y] [--tiny] [--with-native-compilation] [--with-native-json] [--with-tree-sitter] [--with-x-toolkit athena|gtk|lucid]"
+	echo "USAGE: $basename [--deps] [--dry-run] [--gpg-if-available] [--help] [--release X.Y] [--tiny] [--with-native-compilation] [--with-tree-sitter] [--with-x-toolkit athena|gtk|lucid]"
 	exit $code
 }
 
@@ -29,7 +29,6 @@ while [ $# -ne 0 ] ; do
 		--tiny)                                    tiny=1                    ; shift   ;;
 		#
 		--with-native-compilation)                 with_native_compilation=1 ; shift   ;;
-		--with-native-json)                        with_native_json=1        ; shift   ;;
 		--with-tree-sitter)                        with_tree_sitter=1        ; shift   ;;
 		--with-x-toolkit)          validate "$@" ; with_x_toolkit=$2         ; shift 2 ;;
 		#
@@ -67,51 +66,35 @@ fi
 # Specify base packages needed to build or run Emacs on each supported
 # operating system.
 case $os in
-	darwin)  packages="$packages xz" ;;
+	darwin)          packages="$packages xz" ;;
 	debian*|ubuntu*) packages="$packages texinfo" ;;
-	fedora*|rhel*) packages="$packages texinfo" ;;
-	freebsd) packages="$packages $(pkg rquery %dn emacs-devel)" ;;
-	openbsd) packages="$packages gmake" ;;
-	*)       echo >&2 "WARNING: no base packages defined: $os" ;;
+	fedora*|rhel*)   packages="$packages texinfo" ;;
+	freebsd)         packages="$packages $(pkg rquery %dn emacs-devel)" ;;
+	openbsd)         packages="$packages gmake" ;;
+	*)               echo >&2 "WARNING: no base packages defined: $os" ;;
 esac
 
 if [ -n "$with_native_compilation" ] ; then
 	# libgccjit: Library for embedding GCC inside programs and libraries
 	case $os in
-		fedora*|rhel*) packages="$packages libgccjit libgccjit-devel zlib zlib-devel" ;;
-		debian*|ubuntu*) packages="$packages libgccjit0 libgccjit14-dev" ;;
-		*)       echo >&2 "WARNING: no native-compilation packages defined: $os" ;;
+		debian*|ubuntu*) packages="$packages libgccjit0 libgccjit14-dev zlib1g zlib1g-dev" ;;
+		fedora*|rhel*)   packages="$packages libgccjit libgccjit-devel zlib zlib-devel" ;;
+		*)               echo >&2 "WARNING: no native-compilation packages defined: $os" ;;
 	esac
 
 	# Optionally perform native compilation of Emacs source lisp files after
 	# Emacs itself is built.
 	config="$config --with-native-compilation=aot --with-zlib"
 else
-	# config="$config --without-native-compilation" # 29
 	config="$config --with-native-compilation=no" # 30.1
 fi
-
-# The below not needed 30.1 and after:
-# if [ -n "$with_native_json" ] ; then
-# 	# jansson: Small library for parsing and writing JSON documents.
-# 	case $os in
-# 		darwin)  packages="$packages jansson" ;;
-# 		debian*|ubuntu*) packages="$packages libjansson-dev" ;;
-# 		fedora*|rhel*) packages="$packages jansson jansson-devel" ;;
-# 		freebsd) packages="$packages jansson" ;;
-# 		openbsd) packages="$packages jansson" ;;
-# 		*)       echo >&2 "WARNING: no jansson packages defined: $os" ;;
-# 	esac
-# 	config="$config --with-json"
-# else
-# 	config="$config --without-json"
-# fi
 
 if [ -n "$with_tree_sitter" ] ; then
 	# tree-sitter: Incremental parsing library for programming tools
 	case $os in
-		fedora*|rhel*) packages="$packages libtree-sitter libtree-sitter-devel" ;;
-		*)       echo >&2 "WARNING: no tree-sitter packages defined: $os" ;;
+		debian*|ubuntu*) packages="$packages libtree-sitter-dev libtree-sitter0" ;;
+		fedora*|rhel*)   packages="$packages libtree-sitter libtree-sitter-devel" ;;
+		*)               echo >&2 "WARNING: no tree-sitter packages defined: $os" ;;
 	esac
 	config="$config --with-tree-sitter"
 else
@@ -120,21 +103,21 @@ fi
 
 # gnutls: GNU Transport Layer Security Library
 case $os in
-	darwin)  packages="$packages gnutls-devel" ;;
+	darwin)          packages="$packages gnutls-devel" ;;
 	debian*|ubuntu*) packages="$packages libgnutls28-dev" ;;
-	fedora*|rhel*) packages="$packages gnutls gnutls-devel" ;;
-	freebsd) packages="$packages gnutls" ;;
-	openbsd) packages="$packages gnutls" ;;
-	*)       echo >&2 "WARNING: no gnutls packages defined: $os" ;;
+	fedora*|rhel*)   packages="$packages gnutls gnutls-devel" ;;
+	freebsd)         packages="$packages gnutls" ;;
+	openbsd)         packages="$packages gnutls" ;;
+	*)               echo >&2 "WARNING: no gnutls packages defined: $os" ;;
 esac
 
 # ncurses: terminal independent library
 case $os in
-	darwin)  packages="$packages ncurses" ;;
+	darwin)          packages="$packages ncurses" ;;
 	debian*|ubuntu*) packages="$packages libncurses-dev" ;;
-	fedora*|rhel*) packages="$packages ncurses ncurses-devel" ;;
-	freebsd) packages="$packages ncurses" ;;
-	*)       echo >&2 "WARNING: no ncurses packages defined: $os" ;;
+	fedora*|rhel*)   packages="$packages ncurses ncurses-devel" ;;
+	freebsd)         packages="$packages ncurses" ;;
+	*)               echo >&2 "WARNING: no ncurses packages defined: $os" ;;
 esac
 
 # graphics
@@ -142,10 +125,11 @@ if [ -n "$with_x_toolkit" ] ; then
 	# If using graphics, first specify libraries which are not related to
 	# which graphics framework is to be used.
 	case $os in
-		darwin)  packages="$packages librsvg" ;;
-		fedora*|rhel*) packages="$packages giflib giflib-devel harfbuzz harfbuzz-devel libX11-devel libXpm-devel libjpeg libjpeg-devel libpng-devel librsvg2 librsvg2-devel libtiff-devel openjpeg2-devel" ;;
-		openbsd) : ;;
-		*)       echo >&2 "WARNING: no graphics packages defined for: $os" ;;
+		darwin)          packages="$packages librsvg" ;;
+		debian*|ubuntu*) packages="$packages libgif-dev libgif7 libharfbuzz-dev libjpeg-dev libpng-dev librsvg2-dev libtiff-dev libxft-dev libxft2 libxpm-dev zlib1g zlib1g-dev" ;;
+		fedora*|rhel*)   packages="$packages giflib giflib-devel harfbuzz harfbuzz-devel libX11-devel libXft libXft-devel libXpm-devel libjpeg libjpeg-devel libpng-devel librsvg2 librsvg2-devel libtiff-devel openjpeg2-devel" ;;
+		openbsd)         : ;;
+		*)               echo >&2 "WARNING: no graphics packages defined for: $os" ;;
 	esac
 
 	# Different graphics framework libraries have different package
@@ -153,16 +137,18 @@ if [ -n "$with_x_toolkit" ] ; then
 	case $with_x_toolkit in
 		athena|lucid)
 			case $os in
-				fedora*|rhel*) packages="$packages libXaw libXaw-devel" ;;
-				*)       echo >&2 "WARNING: no lucid packages defined for: $os" ;;
+				debian*|ubuntu*) packages="$packages libxaw3dxft8 libxaw3dxft8-dev" ;;
+				fedora*|rhel*)   packages="$packages libXaw libXaw-devel" ;;
+				*)               echo >&2 "WARNING: no lucid packages defined for: $os" ;;
 			esac
 			config="$config --without-toolkit-scroll-bars"
 			;;
 		gtk)
 			case $os in
 				fedora*|rhel*) packages="$packages gtk2 gtk2-devel" ;;
-				*)       echo >&2 "WARNING: no gtk packages defined for: $os" ;;
+				*)             echo >&2 "WARNING: no gtk packages defined for: $os" ;;
 			esac
+			config="$config --without-toolkit-scroll-bars"
 			;;
 		motif)
 			# standard file system dialogs, but valid
@@ -182,7 +168,7 @@ else
 	esac
 fi
 
-packages=$(echo "$packages" | tr ' ' '\n' | sort | tr '\n' ' ')
+packages=$(echo "$packages" | tr ' ' '\n' | sort -u | tr '\n' ' ')
 
 if [ -n "$dry_run" ] ; then
 	echo "CONFIGURE: $config"
@@ -201,13 +187,13 @@ if [ -n "$deps" ] && [ -n "$packages" ] ; then
 			sudo port install $packages
 			;;
 		debian*|ubuntu*)
-			sudo apt-get install build-essential
-			: sudo apt-get build-dep emacs
-			sudo apt-get install $packages
+			sudo /usr/bin/apt-get install build-essential
+			sudo /usr/bin/apt-get build-dep emacs
+			sudo /usr/bin/apt-get install $packages
 			;;
 		fedora*|rhel*)
-			: sudo dnf builddep emacs
-			sudo dnf install $packages
+			: sudo /usr/bin/dnf builddep emacs
+			sudo /usr/bin/dnf install $packages
 			;;
 		freebsd)
 			doas pkg install -y $packages
