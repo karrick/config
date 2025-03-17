@@ -215,7 +215,11 @@ case $_SHELL in
 		# and /bin/ksh only invoke $ENV when interactive. The goal is to
 		# enable re-use of ~/.profile and ~/.shrc for both /bin/sh, /bin/bash,
 		# /bin/ksh, and potentially other command line shells.
-		[ ! -r "$HOME/.shrc" ] || . "$HOME/.shrc"
+		#
+		#     ln -s .config/.profile .profile
+		#     ln -s .config/.shrc .bashrc
+		[ -e .bashrc ] || ln -s .config/.shrc .bashrc
+		. .bashrc
 		;;
 	ksh|sh)
 		# /bin/ksh and /bin/sh merely need $ENV to be defined and point to the
