@@ -131,7 +131,7 @@ if [ -n "$with_x_toolkit" ] ; then
 	case $os in
 		darwin)          packages="$packages librsvg" ;;
 		debian*|ubuntu*) packages="$packages libgif-dev libgif7 libharfbuzz-dev libjpeg-dev libpng-dev librsvg2-dev libtiff-dev libxft-dev libxft2 libxpm-dev zlib1g zlib1g-dev" ;;
-		fedora*|rhel*)   packages="$packages giflib giflib-devel harfbuzz harfbuzz-devel libX11-devel libXft libXft-devel libXpm-devel libjpeg libjpeg-devel libpng-devel librsvg2 librsvg2-devel libtiff-devel openjpeg2-devel" ;;
+		fedora*|rhel*)   packages="$packages giflib giflib-devel harfbuzz harfbuzz-devel libX11-devel libXft libXft-devel libXpm-devel libjpeg libjpeg-devel libpng-devel librsvg2 librsvg2-devel libtiff-devel openjpeg2-devel zlib zlib-devel" ;;
 		openbsd)         : ;;
 		*)               echo >&2 "WARNING: no graphics packages defined for: $os" ;;
 	esac
@@ -164,7 +164,7 @@ if [ -n "$with_x_toolkit" ] ; then
 			;;
 	esac
 
-	config="$config --with-gif=ifavailable --with-jpeg=ifavailable --with-png=ifavailable --with-tiff=ifavailable --with-x-toolkit=$with_x_toolkit"
+	config="$config --with-gif=ifavailable --with-jpeg=ifavailable --with-png=ifavailable --with-tiff=ifavailable --with-x-toolkit=$with_x_toolkit --with-zlib"
 else
 	config="$config --without-x"
 	case $os in
