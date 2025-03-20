@@ -146,12 +146,12 @@
   :ensure t
   :config (default-text-scale-mode))
 
-;; eat is Emulate A Terminal, which I am considering as a replacement for
-;; xterm-color.
-(use-package eat
-  :custom
-  (eat-enable-auto-line-mode t)
-  :ensure t)
+;; ;; eat is Emulate A Terminal, which I am considering as a replacement for
+;; ;; xterm-color.
+;; (use-package eat
+;;   :custom
+;;   (eat-enable-auto-line-mode t)
+;;   :ensure t)
 
 (use-package emacs
   :bind ("C-x C-n" . other-window))
@@ -538,7 +538,8 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("nongnu" . "https://elpa.nongnu.org/nongnu/")
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
- '(package-selected-packages nil)
+ '(package-selected-packages
+   '(buffer-move company deadgrep default-text-scale flycheck-eglot go-mode nix-mode puppet-mode pyvenv ruff-format rustic shfmt switch-window unfill which-key yasnippet zenburn-theme zig-mode))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
  '(sh-basic-offset 4)
