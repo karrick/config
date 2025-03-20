@@ -5,7 +5,7 @@
 set -e
 
 basename=$(basename "$0")
-defaultRelease=30.1
+defaultRelease=29.4
 
 [ -n "$XDG_DOWNLOAD_DIR" ] || XDG_DOWNLOAD_DIR="$HOME/Downloads"
 [ -d "$XDG_DOWNLOAD_DIR" ] || mkdir -p "$XDG_DOWNLOAD_DIR"
@@ -13,7 +13,7 @@ defaultRelease=30.1
 usage() {
 	code=0
 	[ $# -eq 0 ] || echo >&2 "$basename: $*" && code=2
-	echo "USAGE: $basename [--deps] [--dry-run] [--gpg-if-available] [--help] [--release X.Y] [--tiny] [--with-gnu-tls-if-available] [--with-native-compilation] [--with-tree-sitter] [--with-x-toolkit athena|gtk|lucid]"
+	echo "USAGE: $basename [--deps] [--dry-run] [--gpg-if-available] [--help] [--release X.Y] [--tiny] [--with-gnu-tls-if-available] [--with-native-compilation] [--with-native-json] [--with-tree-sitter] [--with-x-toolkit athena|gtk|lucid]"
 	exit $code
 }
 
@@ -30,9 +30,10 @@ while [ $# -ne 0 ] ; do
 		#
 		--with-gnu-tls-if-available)               with_gnu_tls_if_available=1 ; shift   ;;
 		--with-native-compilation)                 with_native_compilation=1   ; shift   ;;
+		--with-native-json)                        with_native_json=1          ; shift   ;;
 		--with-tree-sitter)                        with_tree_sitter=1          ; shift   ;;
 		--with-x-toolkit)          validate "$@" ; with_x_toolkit=$2           ; shift 2 ;;
-		#																	   
+		#
 		*)                         usage "illegal argument: $1"                          ;;
 	esac
 done
@@ -53,6 +54,9 @@ fi
 
 [ -n "$XDG_DATA_HOME" ] || XDG_DATA_HOME="$HOME/.local/share" # Application Data: /usr/share
 config="--prefix=$XDG_DATA_HOME/${os}/${arch}"
+
+# 50% speedup available on 30.1
+# config="$config --disable-gc-mark-trace"
 
 if [ -n "$tiny" ] ; then
 	# Disables most library support, but still builds with X.
@@ -87,7 +91,22 @@ if [ -n "$with_native_compilation" ] ; then
 	# Emacs itself is built.
 	config="$config --with-native-compilation=aot --with-zlib"
 else
-	config="$config --with-native-compilation=no" # 30.1
+	config="$config --with-native-compilation=no"
+fi
+
+if [ -n "$with_native_json" ] ; then
+	# jansson: Small library for parsing and writing JSON documents.
+	case $os in
+		darwin)          packages="$packages jansson" ;;
+		debian*|ubuntu*) packages="$packages libjansson4 libjansson-dev" ;;
+		fedora*|rhel*)   packages="$packages jansson jansson-devel" ;;
+		freebsd)         packages="$packages jansson" ;;
+		openbsd)         packages="$packages jansson" ;;
+		*)               echo >&2 "WARNING: no jansson packages defined: $os" ;;
+	esac
+	config="$config --with-json"
+else
+	config="$config --without-json"
 fi
 
 if [ -n "$with_tree_sitter" ] ; then
@@ -141,22 +160,20 @@ if [ -n "$with_x_toolkit" ] ; then
 	case $with_x_toolkit in
 		athena|lucid)
 			case $os in
-				debian*|ubuntu*) packages="$packages libxaw3dxft8 libxaw3dxft8-dev" ;;
+				debian*|ubuntu*) packages="$packages libxaw7 libxaw7-dev libxaw3dxft8 libxaw3dxft8-dev" ;;
 				fedora*|rhel*)   packages="$packages libXaw libXaw-devel" ;;
 				*)               echo >&2 "WARNING: no lucid packages defined for: $os" ;;
 			esac
-			config="$config --without-toolkit-scroll-bars"
 			;;
 		gtk)
 			case $os in
 				fedora*|rhel*) packages="$packages gtk2 gtk2-devel" ;;
 				*)             echo >&2 "WARNING: no gtk packages defined for: $os" ;;
 			esac
-			config="$config --without-toolkit-scroll-bars"
 			;;
 		motif)
 			# standard file system dialogs, but valid
-			config="$config --without-toolkit-scroll-bars"
+			:
 			;;
 		*)
 			echo >&2 "ERROR: graphics kit not recognized: $with_x_toolkit"
@@ -164,7 +181,7 @@ if [ -n "$with_x_toolkit" ] ; then
 			;;
 	esac
 
-	config="$config --with-gif=ifavailable --with-jpeg=ifavailable --with-png=ifavailable --with-tiff=ifavailable --with-x-toolkit=$with_x_toolkit --with-zlib"
+	config="$config --with-gif=ifavailable --with-jpeg=ifavailable --with-png=ifavailable --with-tiff=ifavailable --with-x-toolkit=$with_x_toolkit --with-zlib --without-toolkit-scroll-bars"
 else
 	config="$config --without-x"
 	case $os in
@@ -196,7 +213,7 @@ if [ -n "$deps" ] && [ -n "$packages" ] ; then
 			sudo /usr/bin/apt-get install $packages
 			;;
 		fedora*|rhel*)
-			: sudo /usr/bin/dnf builddep emacs
+			sudo /usr/bin/dnf builddep emacs
 			sudo /usr/bin/dnf install $packages
 			;;
 		freebsd)
@@ -227,7 +244,7 @@ if [ ! -f "$bundle_local" ] ; then
 	curl -L --create-dirs --output "$bundle_local" "http://ftp.gnu.org/gnu/emacs/$bundle"
 fi
 
-if false && which gpg >/dev/null 2>&1 ; then
+if which gpg >/dev/null 2>&1 ; then
 	keyring=gnu-keyring.gpg
 	keyring_local=$XDG_DOWNLOAD_DIR/$keyring
 	if [ ! -f "$keyring_local" ] ; then
@@ -279,11 +296,16 @@ fi
 
 ################
 
-build_dir="$XDG_DOWNLOAD_DIR/emacs-${release}"
-rm -rf "$build_dir"
-xz --decompress --stdout "$bundle_local" | tar -x -C "$XDG_DOWNLOAD_DIR" -f -
+BUILD_DIR=$(mktemp -d)
+cleanup() {
+	[ -z "$BUILD_DIR" ] || rm -fr "$BUILD_DIR"
+}
+# trap cleanup EXIT
 
-cd "$build_dir"
+echo >&2 "################ Extracting: $BUILD_DIR..."
+echo >&2 "xz --decompress --stdout "$bundle_local" | tar -C "$BUILD_DIR" -f - -x"
+xz --decompress --stdout "$bundle_local" | tar -C "$BUILD_DIR" -f - -x
+cd "$BUILD_DIR/emacs-${release}"
 
 echo >&2 "################ Configuring..."
 echo >&2 "./configure $config"
@@ -301,6 +323,9 @@ if [ "$code" -ne 0 ] ; then
 	echo >&2 "ERROR: cannot compile: $code"
 	exit $code
 fi
+
+# echo >&2 "################ Test this..."
+# exit 0
 
 echo >&2 "################ Installing..."
 make install
@@ -320,3 +345,6 @@ case $os in
 esac
 
 echo >&2 "################ Installation successful."
+
+echo >&2 "################ Deleting build directory."
+cleanup
