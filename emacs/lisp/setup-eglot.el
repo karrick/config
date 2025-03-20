@@ -30,14 +30,26 @@
   ;; is not yet properly configured on all platforms.
   :hook
   ((
-	bash-ts-mode sh-mode
-	go-mode go-dot-mod-mode go-dot-work-mode go-ts-mode go-mod-ts-mode
-	;; js-mode js-ts-mode
+	sh-mode
+	;; bash-ts-mode sh-mode
+
+	go-mode go-dot-mod-mode go-dot-work-mode
+	;; go-ts-mode go-mod-ts-mode
+
+	js-mode
+	;; js-ts-mode
+
 	python-mode
-	rust-ts-mode rust-mode
+
+	rust-mode
+	;; rust-ts-mode
+
 	;; tsx-ts-mode typescript-ts-mode typescript-mode
-	;; yaml-ts-mode yaml-mode
-	;; zig-mode
+
+	yaml-mode
+	;; yaml-ts-mode
+
+	zig-mode
 	) . eglot-ensure)
 
   :custom
