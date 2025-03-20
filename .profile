@@ -218,8 +218,8 @@ case $_SHELL in
 		#
 		#     ln -s .config/.profile .profile
 		#     ln -s .config/.shrc .bashrc
-		[ -e .bashrc ] || ln -s .config/.shrc .bashrc
-		. .bashrc
+		[ -e "$HOME/.bashrc" ] || ln -s .config/.shrc .bashrc
+		. "$HOME/.bashrc"
 		;;
 	ksh|sh)
 		# /bin/ksh and /bin/sh merely need $ENV to be defined and point to the
