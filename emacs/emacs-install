@@ -41,6 +41,8 @@ done
 # The OS affects installation location and libraries that need to be
 # installed.
 os=$(uname -s | tr A-Z a-z)
+
+# Determine architecture
 arch=$(uname -m)
 
 # Linux has a few variants that change the packages one must install, and the
@@ -48,12 +50,12 @@ arch=$(uname -m)
 if [ "$os" = "linux" ] ; then
 	# OS-specific compiled binaries
 	if [ -r /etc/os-release ] ; then
-		os=$(awk -F= < /etc/os-release '/ID|VERSION_ID/ {s=$2 ; if ("\"" == substr(s, 1, 1)) s = substr(s, 2) ; if ("\"" == substr(s, length(s))) s = substr(s, 1, length(s)-1) ; arr[$1] = s} END {printf("%s%s\n", arr["ID"], arr["VERSION_ID"])}' | cut -d. -f1)
+		distro=$(awk -F= < /etc/os-release '/ID|VERSION_ID/ {s=$2 ; if ("\"" == substr(s, 1, 1)) s = substr(s, 2) ; if ("\"" == substr(s, length(s))) s = substr(s, 1, length(s)-1) ; arr[$1] = s} END {printf("%s%s\n", arr["ID"], arr["VERSION_ID"])}' | cut -d. -f1)
 	fi
 fi
 
 [ -n "$XDG_DATA_HOME" ] || XDG_DATA_HOME="$HOME/.local/share" # Application Data: /usr/share
-config="--prefix=$XDG_DATA_HOME/${os}/${arch}"
+config="--prefix=$XDG_DATA_HOME/${os}/${distro}/${arch}"
 
 # 50% speedup available on 30.1
 # config="$config --disable-gc-mark-trace"
@@ -70,21 +72,21 @@ fi
 
 # Specify base packages needed to build or run Emacs on each supported
 # operating system.
-case $os in
+case $distro in
 	darwin)          packages="$packages xz" ;;
 	debian*|ubuntu*) packages="$packages texinfo" ;;
 	fedora*|rhel*)   packages="$packages texinfo" ;;
 	freebsd)         packages="$packages $(pkg rquery %dn emacs-devel)" ;;
 	openbsd)         packages="$packages gmake" ;;
-	*)               echo >&2 "WARNING: no base packages defined: $os" ;;
+	*)               echo >&2 "WARNING: no base packages defined: $distro" ;;
 esac
 
 if [ -n "$with_native_compilation" ] ; then
 	# libgccjit: Library for embedding GCC inside programs and libraries
-	case $os in
+	case $distro in
 		debian*|ubuntu*) packages="$packages libgccjit0 libgccjit14-dev zlib1g zlib1g-dev" ;;
 		fedora*|rhel*)   packages="$packages libgccjit libgccjit-devel zlib zlib-devel" ;;
-		*)               echo >&2 "WARNING: no native-compilation packages defined: $os" ;;
+		*)               echo >&2 "WARNING: no native-compilation packages defined: $distro" ;;
 	esac
 
 	# Optionally perform native compilation of Emacs source lisp files after
@@ -96,13 +98,13 @@ fi
 
 if [ -n "$with_native_json" ] ; then
 	# jansson: Small library for parsing and writing JSON documents.
-	case $os in
+	case $distro in
 		darwin)          packages="$packages jansson" ;;
 		debian*|ubuntu*) packages="$packages libjansson4 libjansson-dev" ;;
 		fedora*|rhel*)   packages="$packages jansson jansson-devel" ;;
 		freebsd)         packages="$packages jansson" ;;
 		openbsd)         packages="$packages jansson" ;;
-		*)               echo >&2 "WARNING: no jansson packages defined: $os" ;;
+		*)               echo >&2 "WARNING: no jansson packages defined: $distro" ;;
 	esac
 	config="$config --with-json"
 else
@@ -111,10 +113,10 @@ fi
 
 if [ -n "$with_tree_sitter" ] ; then
 	# tree-sitter: Incremental parsing library for programming tools
-	case $os in
+	case $distro in
 		debian*|ubuntu*) packages="$packages libtree-sitter-dev libtree-sitter0" ;;
 		fedora*|rhel*)   packages="$packages libtree-sitter libtree-sitter-devel" ;;
-		*)               echo >&2 "WARNING: no tree-sitter packages defined: $os" ;;
+		*)               echo >&2 "WARNING: no tree-sitter packages defined: $distro" ;;
 	esac
 	config="$config --with-tree-sitter"
 else
@@ -122,53 +124,53 @@ else
 fi
 
 # gnutls: GNU Transport Layer Security Library
-case $os in
+case $distro in
 	darwin)          packages="$packages gnutls-devel" ;;
 	debian*|ubuntu*) packages="$packages libgnutls28-dev" ;;
 	fedora*|rhel*)   packages="$packages gnutls gnutls-devel" ;;
 	freebsd)         packages="$packages gnutls" ;;
 	openbsd)         packages="$packages gnutls" ;;
-	*)               echo >&2 "WARNING: no gnutls packages defined: $os" ;;
+	*)               echo >&2 "WARNING: no gnutls packages defined: $distro" ;;
 esac
 if [ -n "$with_gnu_tls_if_available" ] ; then
 	config="$config --with-gnutls=ifavailable"
 fi
 
 # ncurses: terminal independent library
-case $os in
+case $distro in
 	darwin)          packages="$packages ncurses" ;;
 	debian*|ubuntu*) packages="$packages libncurses-dev" ;;
 	fedora*|rhel*)   packages="$packages ncurses ncurses-devel" ;;
 	freebsd)         packages="$packages ncurses" ;;
-	*)               echo >&2 "WARNING: no ncurses packages defined: $os" ;;
+	*)               echo >&2 "WARNING: no ncurses packages defined: $distro" ;;
 esac
 
 # graphics
 if [ -n "$with_x_toolkit" ] ; then
 	# If using graphics, first specify libraries which are not related to
 	# which graphics framework is to be used.
-	case $os in
+	case $distro in
 		darwin)          packages="$packages librsvg" ;;
 		debian*|ubuntu*) packages="$packages libgif-dev libgif7 libharfbuzz-dev libjpeg-dev libpng-dev librsvg2-dev libtiff-dev libxft-dev libxft2 libxpm-dev zlib1g zlib1g-dev" ;;
 		fedora*|rhel*)   packages="$packages giflib giflib-devel harfbuzz harfbuzz-devel libX11-devel libXft libXft-devel libXpm-devel libjpeg libjpeg-devel libpng-devel librsvg2 librsvg2-devel libtiff-devel openjpeg2-devel zlib zlib-devel" ;;
 		openbsd)         : ;;
-		*)               echo >&2 "WARNING: no graphics packages defined for: $os" ;;
+		*)               echo >&2 "WARNING: no graphics packages defined for: $distro" ;;
 	esac
 
 	# Different graphics framework libraries have different package
 	# requirements.
 	case $with_x_toolkit in
 		athena|lucid)
-			case $os in
+			case $distro in
 				debian*|ubuntu*) packages="$packages libxaw7 libxaw7-dev libxaw3dxft8 libxaw3dxft8-dev" ;;
 				fedora*|rhel*)   packages="$packages libXaw libXaw-devel" ;;
-				*)               echo >&2 "WARNING: no lucid packages defined for: $os" ;;
+				*)               echo >&2 "WARNING: no lucid packages defined for: $distro" ;;
 			esac
 			;;
 		gtk)
-			case $os in
+			case $distro in
 				fedora*|rhel*) packages="$packages gtk2 gtk2-devel" ;;
-				*)             echo >&2 "WARNING: no gtk packages defined for: $os" ;;
+				*)             echo >&2 "WARNING: no gtk packages defined for: $distro" ;;
 			esac
 			;;
 		motif)
@@ -184,7 +186,7 @@ if [ -n "$with_x_toolkit" ] ; then
 	config="$config --with-gif=ifavailable --with-jpeg=ifavailable --with-png=ifavailable --with-tiff=ifavailable --with-x-toolkit=$with_x_toolkit --with-zlib --without-toolkit-scroll-bars"
 else
 	config="$config --without-x"
-	case $os in
+	case $distro in
 		darwin) config="$config --without-ns" ;;
 	esac
 fi
@@ -203,7 +205,7 @@ if [ -n "$deps" ] && [ -n "$packages" ] ; then
 	# Install build and runtime dependencies.
 	echo "PACKAGES:  $packages"
 	echo "Please type your password to install packages:"
-	case $os in
+	case $distro in
 		darwin)
 			sudo port install $packages
 			;;
@@ -223,7 +225,7 @@ if [ -n "$deps" ] && [ -n "$packages" ] ; then
 			doas pkg_add install $packages
 			;;
 		*)
-			echo >&2 "ERROR: no support for installing packages: $os"
+			echo >&2 "ERROR: no support for installing packages: $distro"
 			exit 1
 			;;
 	esac
@@ -303,7 +305,7 @@ cleanup() {
 # trap cleanup EXIT
 
 echo >&2 "################ Extracting: $BUILD_DIR..."
-echo >&2 "xz --decompress --stdout "$bundle_local" | tar -C "$BUILD_DIR" -f - -x"
+echo >&2 "xz --decompress --stdout \"$bundle_local\" | tar -C \"$BUILD_DIR\" -f - -x"
 xz --decompress --stdout "$bundle_local" | tar -C "$BUILD_DIR" -f - -x
 cd "$BUILD_DIR/emacs-${release}"
 
@@ -335,12 +337,12 @@ if [ "$code" -ne 0 ] ; then
 	exit $code
 fi
 
-if [ "$os" = "darwin" ] ; then
+if [ "$distro" = "darwin" ] ; then
 	echo >&2 "################ Moving to /Applications..."
 	sudo /bin/mv nextstep/Emacs.app /Applications
 fi
 
-case $os in
+case $distro in
 	darwin) sudo /usr/bin/codesign --force --deep --sign - /Applications/MacPorts/Emacs.app ;;
 esac
 
