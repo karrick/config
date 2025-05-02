@@ -36,11 +36,12 @@ arch=$(uname -m)
 if [ "$os" = "linux" ] ; then
 	# OS-specific compiled binaries
 	if [ -r /etc/os-release ] ; then
-		os=$(awk -F= < /etc/os-release '/ID|VERSION_ID/ {s=$2 ; if ("\"" == substr(s, 1, 1)) s = substr(s, 2) ; if ("\"" == substr(s, length(s))) s = substr(s, 1, length(s)-1) ; arr[$1] = s} END {printf("%s%s\n", arr["ID"], arr["VERSION_ID"])}' | cut -d. -f1)
+		distro=$(awk -F= < /etc/os-release '/ID|VERSION_ID/ {s=$2 ; if ("\"" == substr(s, 1, 1)) s = substr(s, 2) ; if ("\"" == substr(s, length(s))) s = substr(s, 1, length(s)-1) ; arr[$1] = s} END {printf("%s%s\n", arr["ID"], arr["VERSION_ID"])}' | cut -d. -f1)
 	fi
 fi
 
 # echo >&2 "os: [$os]"
+# echo >&2 "distro: [$distro]"
 # if : ; then return ; fi
 
 # To prioritize access latency over availability, ensure that highly ephemeral
@@ -79,9 +80,10 @@ PATH=
 
 for i in \
 		$HOME/bin \
+		$XDG_DATA_HOME/${os}/${distro}/${arch}/bin \
+		$XDG_DATA_HOME/${os}/${distro}/bin \
 		$XDG_DATA_HOME/${os}/${arch}/bin \
 		$XDG_DATA_HOME/${os}/bin \
-		$XDG_DATA_HOME/${arch}/bin \
 		$XDG_DATA_HOME/bin \
 		$HOME/.cargo/bin \
 		/opt/local/sbin \
@@ -92,7 +94,7 @@ for i in \
 		/sbin \
 		/bin \
 	; do
-	if : ; then
+	if ! : ; then
 		[ -d "$i" ] && PATH="${PATH}${PATH:+:}${i}"
 	else
 		[ -d "$i" ] && PATH="${PATH}${PATH:+:}${i}" && echo "--> [Y] $i" || echo "--> [N] $i"
@@ -121,7 +123,9 @@ BEGIN {
 		   items[$i]=1;
 		}
 }')
-# echo >&2 "PATH_ADDITIONS: [$PATH_ADDITIONS]"
+# echo >&2 "PATH_ADDITIONS:"
+# echo $PATH_ADDITIONS | tr : '\n' >&2
+export PATH_ADDITIONS
 
 unset MANPATH
 export MANPATH=$(echo "$PATH" | tr : '\n' | (while read -r i ; do
@@ -141,6 +145,7 @@ MANPATH_ADDITIONS=$(echo "$PATH_ADDITIONS" | tr : '\n' | (while read -r i ; do
 												 done
 											 done ; echo "$MANPATH_ADDITIONS"))
 # echo >&2 "MANPATH_ADDITIONS: [$MANPATH_ADDITIONS]"
+export MANPATH_ADDITIONS
 
 PATH_CLEAN=$PATH
 MANPATH_CLEAN=$MANPATH
