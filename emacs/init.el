@@ -389,15 +389,29 @@ If there is no .svn directory, examine if there is CVS and run
 (global-set-key (kbd "C-x $") #'aj-toggle-fold)
 
 (use-package flycheck
-  :defer t
-  :ensure t
+  ;; :defer t
   :config
   (global-flycheck-mode)
+  ;; golang
+  (let ((cmd (executable-find "staticcheck")))
+	(if (null cmd)
+		(message "Cannot find 'staticcheck' program.")
+	  (setq flycheck-go-staticcheck-executable cmd)
+	  (add-hook 'go-mode-hook 'flycheck-mode)))
+  ;; shell
+  ;; TODO: Consider https://github.com/cuonglm/flycheck-checkbashisms
   (let ((cmd (executable-find "shellcheck")))
 	(if (null cmd)
 		(message "Cannot find 'shellcheck' program.")
 	  (setq flycheck-sh-shellcheck-executable cmd)
-	  (add-hook 'sh-mode-hook 'flycheck-mode))))
+	  (add-hook 'sh-mode-hook 'flycheck-mode)))
+  ;; python
+  (let ((cmd (executable-find "ruff")))
+	(if (null cmd)
+		(message "Cannot find 'ruff' program.")
+	  (setq flycheck-python-ruff-executable cmd)
+	  (add-hook 'python-mode-hook 'flycheck-mode)))
+  :ensure t)
 
 (use-package flycheck-eglot
   :after flycheck eglot
@@ -539,7 +553,7 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(buffer-move company deadgrep default-text-scale flycheck-eglot go-mode nix-mode puppet-mode pyvenv ruff-format rustic shfmt switch-window unfill which-key yasnippet zenburn-theme zig-mode))
+   '(markdown-mode buffer-move company deadgrep default-text-scale dpkg-dev-el flycheck-eglot go-mode nix-mode puppet-mode pyvenv ruff-format rustic switch-window unfill which-key yasnippet zenburn-theme zig-mode))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
  '(sh-basic-offset 4)
