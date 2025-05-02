@@ -5,7 +5,7 @@
 ;;; Code:
 
 ;; go install mvdan.cc/sh/v3/cmd/shfmt@latest
-(when (executable-find "shfmt")
+(when (and nil (executable-find "shfmt"))
   (use-package shfmt
 	:ensure t
 	:hook (sh-mode shfmt-on-save-mode)))
