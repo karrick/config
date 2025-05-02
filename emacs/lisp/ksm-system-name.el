@@ -5,7 +5,7 @@
 ;;; Code:
 
 (defun ksm/system-name ()
-  "Returns a string representing the system-type."
+  "Return a string representing the 'system-type'."
   (cond
    ((memq system-type '(darwin ms-dos windows-nt cygwin haiku)) (symbol-name system-type))
    ((eq system-type 'gnu/kfreebsd) "freebsd")
