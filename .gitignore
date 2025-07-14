@@ -24,6 +24,7 @@ emacs/url
 git/credentials
 git/credentials.template
 gnome-control-center
+go/telemetry/local
 gtk-3.0/bookmarks
 htop/htoprc
 ibus
