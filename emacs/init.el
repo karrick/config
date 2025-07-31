@@ -94,7 +94,7 @@
 
 ;; After XDG_DATA_HOME is set, can set PATH environment variable to any of the
 ;; directories I typically use, provided that they exist.
-(use-package paths)
+;; (use-package paths)
 
 ;; Elide `git(1)` paging capability for sub-processes:
 (setenv "GIT_PAGER" "")
@@ -163,6 +163,7 @@
 (use-package ksm-window
   :bind (("C-x w c" . ksm/window-config-save) ; copy window configuration to hash
 		 ("C-x w r" . ksm/window-config-restore) ; restore window configuration from hash
+		 ("C-x w s" . ksm/window-config-swap) ; swap window configuration
 		 ("C-x 0" . ksm/delete-window)		  ; extension to existing behavior
 		 ("C-x 1" . ksm/delete-other-windows) ; extension to existing behavior
 		 ;; ("C-x 2" . split-window-below) ; this is the default key binding
@@ -553,7 +554,7 @@ If there is no .svn directory, examine if there is CVS and run
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(markdown-mode buffer-move company deadgrep default-text-scale dpkg-dev-el flycheck-eglot go-mode nix-mode puppet-mode pyvenv ruff-format rustic switch-window unfill which-key yasnippet zenburn-theme zig-mode))
+   '(buffer-move company deadgrep default-text-scale dpkg-dev-el flycheck-eglot go-dlv go-mode markdown-mode nix-mode puppet-mode pyvenv ruff-format rustic switch-window unfill which-key yaml-mode yasnippet zenburn-theme zig-mode))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
  '(sh-basic-offset 4)
