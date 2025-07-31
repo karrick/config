@@ -46,6 +46,8 @@
 ;;;
 ;;; Code:
 
+(require 'empty-string)
+
 (defun ksm/delete-other-windows (&optional vertical)
   "Delete all other windows; with VERTICAL delete other windows vertically."
   (interactive "P")
@@ -109,23 +111,43 @@
 			 (message "zoomed out"))
 	 (t (message "no more window configurations on the stack")))))
 
+(defvar ksm/window-configuration-name nil "Name of current window configuration or nil if none.")
+
+(defvar ksm/window-configuration-name-previous nil "Name of previous window configuration or nil if none.")
+
 (defvar ksm/window-configurations-hash (make-hash-table :test #'equal) "Hash table of saved window configurations.")
 
 (defun ksm/window-config-save (name)
   "Prompt user and save window configuration identified by NAME."
-  (interactive "sSave Window Config As: ")
-  (puthash name
-		   (cons (current-window-configuration) (point-marker))
-		   ksm/window-configurations-hash)
-  (delete-other-frames)
-  (message "saved window configuration: %s" name))
+  (interactive
+   (list
+	(read-string (format "Save which layout %s: " (ksm-window--configs)) ksm/window-configuration-name)))
+  (if (empty-string-p name)
+	  (message "cannot save without layout name")
+	(puthash name
+			 (cons (current-window-configuration) (point-marker))
+			 ksm/window-configurations-hash)
+	(unless (equal name ksm/window-configuration-name-previous)
+	  (setq ksm/window-configuration-name-previous ksm/window-configuration-name)
+	  (setq ksm/window-configuration-name name))
+	(delete-other-frames)
+	(message "saved window configuration: %s" name)))
+
+(defun ksm/window-config-swap (save load)
+  "Prompt user to save and load window configuration identified by SAVE and LOAD."
+  (interactive
+   (list
+	(read-string (format "Save which layout %s: " (ksm-window--configs)) ksm/window-configuration-name)
+	(read-string (format "Load which layout %s: " (ksm-window--configs)) ksm/window-configuration-name-previous)))
+  (ksm/window-config-save save)
+  (ksm/window-config-restore load))
 
 (defun ksm/window-config-list ()
   "List saved window configurations."
   (interactive)
-  (message "saved window configurations: %s" (ksm/window--configs)))
+  (message "saved window configurations: %s" (ksm-window--configs)))
 
-(defun ksm/window--configs ()
+(defun ksm-window--configs ()
   "Return list of saved window configurations."
   (interactive)
   (let ((keys '()))
@@ -134,17 +156,26 @@
 
 (defun ksm/window-config-restore (name)
   "Prompt user and restore window configuration identified by NAME."
-  (interactive "sRestore Window Config: ")
-  (let ((config (gethash name ksm/window-configurations-hash)))
-	(cond
-	 (config (set-window-configuration (car config))
-			 (goto-char (cdr config))
-			 (message "restored window configuration: %s" name))
-	 (t (message "cannot restore unknown window configuration: %s" name)))))
+  (interactive
+   (list
+	(read-string (format "Load which layout %s: " (ksm-window--configs)) ksm/window-configuration-name-previous)))
+  (if (empty-string-p name)
+	  (message "cannot load without layout name")
+	(let ((config (gethash name ksm/window-configurations-hash)))
+	  (cond
+	   (config (set-window-configuration (car config))
+			   (unless (equal name ksm/window-configuration-name-previous)
+				 (setq ksm/window-configuration-name-previous ksm/window-configuration-name)
+				 (setq ksm/window-configuration-name name))
+			   (goto-char (cdr config))
+			   (message "restored window configuration: %s" name))
+	   (t (message "cannot restore unknown window configuration: %s" name))))))
 
 (defun ksm/window-config-drop (name)
   "Prompt user and drop window configuration identified by NAME."
-  (interactive "sDrop Window Config: ")
+  (interactive
+   (list
+	(read-string (format "Drop which layout %s: " (ksm-window--configs)))))
   (cond
    ((gethash name ksm/window-configurations-hash)
 	(remhash name ksm/window-configurations-hash)
