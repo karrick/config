@@ -20,6 +20,13 @@ fi
 
 # echo >&2 "$SHELL (interactive): running $HOME/.shrc: ($_SHELL)"
 
+# POSIX-safe ensure HOSTNAME/HOST with whitespace check
+# [ "$(printf '%s' "$HOSTNAME" | awk '{$1=$1;print}')" ] || HOSTNAME=$(uname -n)
+# [ "$(printf '%s' "$HOST" | awk '{$1=$1;print}')" ] || HOST=$(printf '%s' "$HOSTNAME" | cut -d. -f1)
+HOSTNAME=$(uname -n)
+HOST=$(printf '%s' "$HOSTNAME" | cut -d. -f1)
+export HOSTNAME HOST
+
 # https://www.gnu.org/software/screen/manual/html_node/Control-Sequences.html
 set_gnu_screen_hardstatus_line () { printf "\e_%s\e\\" "$*"; } # Application Program Command (xterm window title also sets this)
 set_gnu_screen_window_title () { printf "\ek%s\e\\" "$*"; }	   # Title Definition String
