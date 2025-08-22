@@ -83,12 +83,21 @@ case $_SHELL in
 		}
 		PROMPT_COMMAND=osc_seven_hostname_pwd
 
+		shell_prompt_sans_color() {
+			PS0='# START: \D{%F}T\D{%T}\D{%Z}\n'
+			PS1='# FINISH: \D{%F}T\D{%T}\D{%Z} [$?\]]\n# \u@\h:\w\n\$ '
+		}
+
+		shell_prompt_with_color() {
+			PS0='\[\e[2m\]# START: \D{%F}T\D{%T}\D{%Z}\[\e[22m\]\n'
+			PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\h\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n$ '
+		}
+
 		# Default to color shell prompt, allowing user to switch with
 		# 'shell_prompt_no_color' shell function.
 		case color in
 			color)
-				PS0='\[\e[2m\]# START: \D{%F}T\D{%T}\D{%Z}\[\e[22m\]\n'
-				PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n$ '
+				shell_prompt_with_color
 				;;
 			fancy)
 				PS0='\[\e[2m\]# START: \D{%F}T\D{%T}\D{%Z}\[\e[22m\]\n'
@@ -96,7 +105,7 @@ case $_SHELL in
 				if [ -n "$HOSTPROMPT" ] ; then
 					PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]${HOSTPROMPT}\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n'
 				else
-					PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n'
+					PS1='\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[$( _code=$? ; if [ $_code -eq 0 ] ; then echo "\e[32m$_code\e[39m" ; else echo "\e[1;31m$_code\e[22;39m" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\h\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n'
 				fi
 
 				if which git_prompt >/dev/null 2>&1 ; then
@@ -106,33 +115,38 @@ case $_SHELL in
 				PS1="${PS1}\$ "
 				;;
 			*)
-				PS0='# START: \D{%F}T\D{%T}\D{%Z}\n'
-				PS1='# FINISH: \D{%F}T\D{%T}\D{%Z} [$?\]]\n# \u@\H:\w\n\$ '
+				shell_prompt_sans_color
 				;;
 		esac
+
 		;;
 
 	ksh|sh) : ;;
 
 	zsh)
+		shell_prompt_sans_color() {
+			function preexec () {
+				printf "\e]7;file://%s%s\a" "$HOSTNAME" "$PWD" # Report Working Directory
+				printf "# START: %s\n" "$(date +%FT%T%Z)"
+			}
+			PROMPT=$'# FINISH: %D{%FT%T%Z} [%(?,0,%?)]%{\n%}# %n@%m:%~%{\n%}%# '
+		}
+
+		shell_prompt_with_color() {
+			function preexec () {
+				printf "\e]7;file://%s%s\a" "$HOSTNAME" "$PWD" # Report Working Directory
+				printf "\e[2m# START: %s\e[22m\n" "$(date +%FT%T%Z)"
+			}
+			PROMPT=$'\e[2m# FINISH: %D{%FT%T%Z}\e[22m [%(?,\e[32m0\e[39m,\e[1;31m%?\e[22;39m)]%{\n%}# \e[32m%n\e[39m@\e[36m%m\e[39m:\e[33m%~\e[39m%{\n%}%# '
+		}
+
 		# Default to color shell prompt, allowing user to switch with
 		# 'shell_prompt_no_color' shell function.
 		case color in
-			*color)
-				function preexec () {
-					printf "\e]7;file://%s%s\a" "$HOSTNAME" "$PWD" # Report Working Directory
-					printf "\e[2m# START: %s\e[22m\n" "$(date +%FT%T%Z)"
-				}
-				PROMPT=$'\e[2m# FINISH: %D{%FT%T%Z}\e[22m [%(?,\e[32m0\e[39m,\e[1;31m%?\e[22;39m)]%{\n%}# \e[32m%n\e[39m@\e[36m%M\e[39m:\e[33m%~\e[39m%{\n%}%# '
-				;;
-			*)
-				function preexec () {
-					printf "\e]7;file://%s%s\a" "$HOSTNAME" "$PWD" # Report Working Directory
-					printf "# START: %s\n" "$(date +%FT%T%Z)"
-				}
-				PROMPT=$'# FINISH: %D{%FT%T%Z} [%(?,0,%?)]%{\n%}# m%n@%M:%~%{\n%}%# '
-				;;
+			*color) shell_prompt_with_color ;;
+			*)      shell_prompt_sans_color ;;
 		esac
+
 		;;
 
 	*) echo >&2 "unrecognized shell: '${_SHELL}'" ;;
@@ -175,11 +189,6 @@ dos2unix () { tr -d '\r' <"$1" >"$2" ; }
 mac2unix () { tr '\r' '\n' <"$1" >"$2" ; }
 unix2mac () { tr '\n' '\r' <"$1" >"$2" ; }
 unix2dos () { ruby -pe '$_=$_.gsub(/$/, "\r")' <"$1" >"$2" ; }
-
-shell_prompt_no_color() {
-	PS0='# START: \D{%F}T\D{%T}\D{%Z}\n'
-	PS1='# FINISH: \D{%F}T\D{%T}\D{%Z} [$?\]]\n# \u@\H:\w\n\$ '
-}
 
 [ ! -r "$HOME/.cargo/env" ] || . "$HOME/.cargo/env"
 
