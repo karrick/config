@@ -4,7 +4,7 @@
 
 ;; After several years of testing eglot and lsp-mode, eglot has had superior
 ;; performance and operability benefits over the competing lsp-mode package as
-;; a Language Server Protocol client. Furthermore, recently, eglot has been
+;; a Language Server Protocol client.  Furthermore, recently, eglot has been
 ;; moved into Emacs distribution.
 
 ;;; Code:
