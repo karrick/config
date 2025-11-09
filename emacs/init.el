@@ -332,6 +332,8 @@
 (require 'setup-org-mode)
 (use-package sort-commas)
 
+;; NOTE: Seems to have been replaced by 'prog-fill-reindent-defun in Emacs
+;; 30.1.
 (use-package unfill
   :bind ("M-q" . unfill-toggle)
   :ensure t)
