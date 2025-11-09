@@ -40,6 +40,7 @@ if [ "$os" = "linux" ] ; then
 	fi
 fi
 
+# echo >&2 "arch: [$arch]"
 # echo >&2 "os: [$os]"
 # echo >&2 "distro: [$distro]"
 # if : ; then return ; fi
