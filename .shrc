@@ -161,6 +161,8 @@ alias clip='xclip -selection clipboard'
 alias dfs='df -lh -x devtmpfs -x tmpfs --output=source,ipcent,size,used,avail,pcent,target'
 alias hlf='ls -hlF'
 
+alias git-head='git hl | head'
+
 alias hist='histogram --fold --descending'
 alias histr='histogram --fold --descending --raw'
 alias histw='histogram --fold --descending --width 80'
