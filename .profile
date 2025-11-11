@@ -96,9 +96,9 @@ for i in \
 		/bin \
 	; do
 	if ! : ; then
-		[ -d "$i" ] && PATH="${PATH}${PATH:+:}${i}"
+		[ -d "$i" ] && PATH="${PATH:+$PATH:}${i}"
 	else
-		[ -d "$i" ] && PATH="${PATH}${PATH:+:}${i}" && echo "--> [Y] $i" || echo "--> [N] $i"
+		[ -d "$i" ] && PATH="${PATH:+$PATH:}${i}" && echo "--> [Y] $i" || echo "--> [N] $i"
 	fi
 done
 
