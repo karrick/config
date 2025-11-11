@@ -115,7 +115,7 @@
   "Prompt user and load window configuration identified by NAME."
   (interactive
    (list
-	(read-string (format "Load which layout %s: " (ksm-window--configs)) ksm-window-configuration-name-previous)))
+	(read-string (format "Load which layout %s: " (ksm-window--configs)) (or ksm-window-configuration-name ksm-window-configuration-name-previous))))
   (if (empty-string-p name)
 	  (message "cannot load without layout name")
 	(let ((config (gethash name ksm-window-configurations-hash)))
