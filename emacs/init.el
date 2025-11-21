@@ -94,7 +94,7 @@
 
 ;; After XDG_DATA_HOME is set, can set PATH environment variable to any of the
 ;; directories I typically use, provided that they exist.
-;; (use-package paths)
+(use-package paths)
 
 ;; Elide `git(1)` paging capability for sub-processes:
 (setenv "GIT_PAGER" "")
