@@ -158,7 +158,7 @@ esac
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh /usr/bin/lesspipe)"
 
 alias clip='xclip -selection clipboard'
-alias dfs='df -lh -x devtmpfs -x tmpfs --output=source,ipcent,size,used,avail,pcent,target'
+alias dfh='df -h -x devtmpfs -x tmpfs --output=source,used,size,pcent,iused,itotal,ipcent,target'
 alias hlf='ls -hlF'
 
 alias git-head='git hl | head'
