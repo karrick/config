@@ -33,6 +33,9 @@
 [init]
     defaultBranch = main
 
+[log]
+	date = local
+
 [pull]
     rebase = true
 
@@ -50,5 +53,3 @@
 [user]
     name = Karrick S. McDermott
     email = karrick@gmail.com
-[log]
-	date = local
