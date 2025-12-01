@@ -34,7 +34,7 @@
     defaultBranch = main
 
 [log]
-	date = local
+    date = local
 
 [pull]
     rebase = true
