@@ -23,26 +23,31 @@ umask 022
 #	*) echo >&2 "INSIDE_EMACS: [$INSIDE_EMACS]" ;;
 # esac
 
-# Determine OS and add OS specific PATH if present
+# Determine OS kernel
 os=$(uname -s | tr A-Z a-z)
-# echo >&2 "os: [$os]"
 
-# Determine architecture
+# Determine CPU architecture
 arch=$(uname -m)
-# echo >&2 "arch: [$arch]"
 
-# Linux has a few variants that change the packages one must install, and the
-# command used to install those packages.
-if [ "$os" = "linux" ] ; then
-	# OS-specific compiled binaries
-	if [ -r /etc/os-release ] ; then
-		distro=$(awk -F= < /etc/os-release '/ID|VERSION_ID/ {s=$2 ; if ("\"" == substr(s, 1, 1)) s = substr(s, 2) ; if ("\"" == substr(s, length(s))) s = substr(s, 1, length(s)-1) ; arr[$1] = s} END {printf("%s%s\n", arr["ID"], arr["VERSION_ID"])}' | cut -d. -f1)
-	fi
-fi
+case $arch in
+	amd64|x86_64)  arch=amd64 ;;
+	arm64|aarch64) arch=arm64 ;;
+	*) echo >&2 "$basename: unrecognized architecture: \"$arch\"" ;;
+esac
 
-# echo >&2 "arch: [$arch]"
-# echo >&2 "os: [$os]"
-# echo >&2 "distro: [$distro]"
+case $os in
+	darwin) os=macos ;;
+	linux)
+		# OS-specific compiled binaries
+		if [ -r /etc/os-release ] ; then
+			os=$(awk -F= < /etc/os-release '/ID|VERSION_ID/ {s=$2 ; if ("\"" == substr(s, 1, 1)) s = substr(s, 2) ; if ("\"" == substr(s, length(s))) s = substr(s, 1, length(s)-1) ; arr[$1] = s} END {printf("%s%s\n", arr["ID"], arr["VERSION_ID"])}' | cut -d. -f1)
+		fi
+		;;
+	*) echo >&2 "$basename: unrecognized os: \"$os\"" ;;
+esac
+
+echo >&2 "arch: [$arch]"
+echo >&2 "os: [$os]"
 # if : ; then return ; fi
 
 # To prioritize access latency over availability, ensure that highly ephemeral
@@ -81,8 +86,6 @@ PATH=
 
 for i in \
 		$HOME/bin \
-		$XDG_DATA_HOME/${os}/${distro}/${arch}/bin \
-		$XDG_DATA_HOME/${os}/${distro}/bin \
 		$XDG_DATA_HOME/${os}/${arch}/bin \
 		$XDG_DATA_HOME/${os}/bin \
 		$XDG_DATA_HOME/bin \
@@ -173,12 +176,12 @@ export VISUAL=emacsclient
 
 # GOBIN: The directory where 'go install' will install a command. (To allow
 # sharing among different machines, places in HOME.)
-[ -n "$GOBIN" ] || export GOBIN="$XDG_DATA_HOME/${os}/${distro}/${arch}/bin"
+[ -n "$GOBIN" ] || export GOBIN="$XDG_DATA_HOME/${os}/${arch}/bin"
 
 # GOCACHE: The directory where the go command will store cached information
 # for reuse in future builds. (Highly ephemeral data. Access latency
 # prioritized over availability.)
-[ -n "$GOCACHE" ] || export GOCACHE="$XDG_CACHE_HOME/${os}/${distro}/${arch}/go-build"
+[ -n "$GOCACHE" ] || export GOCACHE="$XDG_CACHE_HOME/${os}/${arch}/go-build"
 
 # GOMODCACHE: The directory where the go command will store downloaded
 # modules. (Once downloaded, should never need to download again. Defaults to
@@ -193,7 +196,7 @@ export VISUAL=emacsclient
 # GOTMPDIR: The directory where the go command will write temporary source
 # files, packages, and binaries. (Highly ephemeral data. Access latency
 # prioritized over availability.)
-[ -n "$GOTMPDIR" ] || export GOTMPDIR="$XDG_CACHE_HOME/${os}/${distro}/${arch}/go-tmp"
+[ -n "$GOTMPDIR" ] || export GOTMPDIR="$XDG_CACHE_HOME/${os}/${arch}/go-tmp"
 mkdir -p "$GOTMPDIR" # As of Go v1.20, it does not create this directory.
 
 mkdir -p "$XDG_STATE_HOME/history"
