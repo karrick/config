@@ -38,24 +38,26 @@ while [ $# -ne 0 ] ; do
 	esac
 done
 
-# The OS affects installation location and libraries that need to be
-# installed.
-os=$(uname -s | tr A-Z a-z)
-
-# Determine architecture
 arch=$(uname -m)
+case $arch in
+	amd64|x86_64)  arch=amd64 ;;
+	arm64|aarch64) arch=arm64 ;;
+	*) echo >&2 "$basename: unrecognized architecture: \"$arch\"" ;;
+esac
 
-# Linux has a few variants that change the packages one must install, and the
-# command used to install those packages.
-if [ "$os" = "linux" ] ; then
-	# OS-specific compiled binaries
-	if [ -r /etc/os-release ] ; then
-		distro=$(awk -F= < /etc/os-release '/ID|VERSION_ID/ {s=$2 ; if ("\"" == substr(s, 1, 1)) s = substr(s, 2) ; if ("\"" == substr(s, length(s))) s = substr(s, 1, length(s)-1) ; arr[$1] = s} END {printf("%s%s\n", arr["ID"], arr["VERSION_ID"])}' | cut -d. -f1)
-	fi
-fi
+os=$(uname -s | tr A-Z a-z)
+case $os in
+	darwin) os=macos ;;
+	linux) [ ! -r /etc/os-release ] || os=$(awk -F= '/^(ID|VERSION_ID)=/{gsub(/"/,"",$2);a[$1]=$2}END{split(a["VERSION_ID"],v,".");printf "%s%s\n",a["ID"],v[1]}' /etc/os-release) ;;
+	*) echo >&2 "$basename: unrecognized os: \"$os\"" ;;
+esac
+
+echo >&2 "arch: [$arch]"
+echo >&2 "os: [$os]"
+# if : ; then return ; fi
 
 [ -n "$XDG_DATA_HOME" ] || XDG_DATA_HOME="$HOME/.local/share" # Application Data: /usr/share
-config="--prefix=$XDG_DATA_HOME/${os}/${distro}/${arch}"
+config="--prefix=$XDG_DATA_HOME/${os}/${arch}"
 
 # 50% speedup available on 30.1
 # config="$config --disable-gc-mark-trace"
