@@ -74,21 +74,21 @@ fi
 
 # Specify base packages needed to build or run Emacs on each supported
 # operating system.
-case $distro in
-	darwin)          packages="$packages xz" ;;
+case $os in
 	debian*|ubuntu*) packages="$packages texinfo" ;;
 	fedora*|rhel*)   packages="$packages texinfo" ;;
 	freebsd)         packages="$packages $(pkg rquery %dn emacs-devel)" ;;
+	macos)           packages="$packages xz" ;;
 	openbsd)         packages="$packages gmake" ;;
-	*)               echo >&2 "WARNING: no base packages defined: $distro" ;;
+	*)               echo >&2 "WARNING: no base packages defined: $os" ;;
 esac
 
 if [ -n "$with_native_compilation" ] ; then
 	# libgccjit: Library for embedding GCC inside programs and libraries
-	case $distro in
+	case $os in
 		debian*|ubuntu*) packages="$packages libgccjit0 libgccjit14-dev zlib1g zlib1g-dev" ;;
 		fedora*|rhel*)   packages="$packages libgccjit libgccjit-devel zlib zlib-devel" ;;
-		*)               echo >&2 "WARNING: no native-compilation packages defined: $distro" ;;
+		*)               echo >&2 "WARNING: no native-compilation packages defined: $os" ;;
 	esac
 
 	# Optionally perform native compilation of Emacs source lisp files after
@@ -100,13 +100,13 @@ fi
 
 if [ -n "$with_native_json" ] ; then
 	# jansson: Small library for parsing and writing JSON documents.
-	case $distro in
-		darwin)          packages="$packages jansson" ;;
+	case $os in
 		debian*|ubuntu*) packages="$packages libjansson4 libjansson-dev" ;;
 		fedora*|rhel*)   packages="$packages jansson jansson-devel" ;;
 		freebsd)         packages="$packages jansson" ;;
+		macos)           packages="$packages jansson" ;;
 		openbsd)         packages="$packages jansson" ;;
-		*)               echo >&2 "WARNING: no jansson packages defined: $distro" ;;
+		*)               echo >&2 "WARNING: no jansson packages defined: $os" ;;
 	esac
 	config="$config --with-json"
 else
@@ -115,10 +115,10 @@ fi
 
 if [ -n "$with_tree_sitter" ] ; then
 	# tree-sitter: Incremental parsing library for programming tools
-	case $distro in
+	case $os in
 		debian*|ubuntu*) packages="$packages libtree-sitter-dev libtree-sitter0" ;;
 		fedora*|rhel*)   packages="$packages libtree-sitter libtree-sitter-devel" ;;
-		*)               echo >&2 "WARNING: no tree-sitter packages defined: $distro" ;;
+		*)               echo >&2 "WARNING: no tree-sitter packages defined: $os" ;;
 	esac
 	config="$config --with-tree-sitter"
 else
@@ -126,53 +126,53 @@ else
 fi
 
 # gnutls: GNU Transport Layer Security Library
-case $distro in
-	darwin)          packages="$packages gnutls-devel" ;;
+case $os in
 	debian*|ubuntu*) packages="$packages libgnutls28-dev" ;;
 	fedora*|rhel*)   packages="$packages gnutls gnutls-devel" ;;
 	freebsd)         packages="$packages gnutls" ;;
+	macos)           packages="$packages gnutls-devel" ;;
 	openbsd)         packages="$packages gnutls" ;;
-	*)               echo >&2 "WARNING: no gnutls packages defined: $distro" ;;
+	*)               echo >&2 "WARNING: no gnutls packages defined: $os" ;;
 esac
 if [ -n "$with_gnu_tls_if_available" ] ; then
 	config="$config --with-gnutls=ifavailable"
 fi
 
 # ncurses: terminal independent library
-case $distro in
-	darwin)          packages="$packages ncurses" ;;
+case $os in
 	debian*|ubuntu*) packages="$packages libncurses-dev" ;;
 	fedora*|rhel*)   packages="$packages ncurses ncurses-devel" ;;
 	freebsd)         packages="$packages ncurses" ;;
-	*)               echo >&2 "WARNING: no ncurses packages defined: $distro" ;;
+	macos)           packages="$packages ncurses" ;;
+	*)               echo >&2 "WARNING: no ncurses packages defined: $os" ;;
 esac
 
 # graphics
 if [ -n "$with_x_toolkit" ] ; then
 	# If using graphics, first specify libraries which are not related to
 	# which graphics framework is to be used.
-	case $distro in
-		darwin)          packages="$packages librsvg" ;;
+	case $os in
 		debian*|ubuntu*) packages="$packages libgif-dev libgif7 libharfbuzz-dev libjpeg-dev libpng-dev librsvg2-dev libtiff-dev libxft-dev libxft2 libxpm-dev zlib1g zlib1g-dev" ;;
 		fedora*|rhel*)   packages="$packages giflib giflib-devel harfbuzz harfbuzz-devel libX11-devel libXft libXft-devel libXpm-devel libjpeg libjpeg-devel libpng-devel librsvg2 librsvg2-devel libtiff-devel openjpeg2-devel zlib zlib-devel" ;;
+		macos)           packages="$packages librsvg" ;;
 		openbsd)         : ;;
-		*)               echo >&2 "WARNING: no graphics packages defined for: $distro" ;;
+		*)               echo >&2 "WARNING: no graphics packages defined for: $os" ;;
 	esac
 
 	# Different graphics framework libraries have different package
 	# requirements.
 	case $with_x_toolkit in
 		athena|lucid)
-			case $distro in
+			case $os in
 				debian*|ubuntu*) packages="$packages libxaw7 libxaw7-dev libxaw3dxft8 libxaw3dxft8-dev" ;;
 				fedora*|rhel*)   packages="$packages libXaw libXaw-devel" ;;
-				*)               echo >&2 "WARNING: no lucid packages defined for: $distro" ;;
+				*)               echo >&2 "WARNING: no lucid packages defined for: $os" ;;
 			esac
 			;;
 		gtk)
-			case $distro in
+			case $os in
 				fedora*|rhel*) packages="$packages gtk2 gtk2-devel" ;;
-				*)             echo >&2 "WARNING: no gtk packages defined for: $distro" ;;
+				*)             echo >&2 "WARNING: no gtk packages defined for: $os" ;;
 			esac
 			;;
 		motif)
@@ -188,8 +188,8 @@ if [ -n "$with_x_toolkit" ] ; then
 	config="$config --with-gif=ifavailable --with-jpeg=ifavailable --with-png=ifavailable --with-tiff=ifavailable --with-x-toolkit=$with_x_toolkit --with-zlib --without-toolkit-scroll-bars"
 else
 	config="$config --without-x"
-	case $distro in
-		darwin) config="$config --without-ns" ;;
+	case $os in
+		macos)  config="$config --without-ns" ;;
 	esac
 fi
 
@@ -207,10 +207,7 @@ if [ -n "$deps" ] && [ -n "$packages" ] ; then
 	# Install build and runtime dependencies.
 	echo "PACKAGES:  $packages"
 	echo "Please type your password to install packages:"
-	case $distro in
-		darwin)
-			sudo port install $packages
-			;;
+	case $os in
 		debian*|ubuntu*)
 			sudo /usr/bin/apt-get install build-essential
 			sudo /usr/bin/apt-get build-dep emacs
@@ -223,11 +220,14 @@ if [ -n "$deps" ] && [ -n "$packages" ] ; then
 		freebsd)
 			doas pkg install -y $packages
 			;;
+		macos) 
+			sudo port install $packages
+			;;
 		openbsd)
 			doas pkg_add install $packages
 			;;
 		*)
-			echo >&2 "ERROR: no support for installing packages: $distro"
+			echo >&2 "ERROR: no support for installing packages: $os"
 			exit 1
 			;;
 	esac
@@ -339,13 +339,13 @@ if [ "$code" -ne 0 ] ; then
 	exit $code
 fi
 
-if [ "$distro" = "darwin" ] ; then
+if [ "$os" = "macos" ] ; then
 	echo >&2 "################ Moving to /Applications..."
 	sudo /bin/mv nextstep/Emacs.app /Applications
 fi
 
-case $distro in
-	darwin) sudo /usr/bin/codesign --force --deep --sign - /Applications/MacPorts/Emacs.app ;;
+case $os in
+	macos) sudo /usr/bin/codesign --force --deep --sign - /Applications/MacPorts/Emacs.app ;;
 esac
 
 echo >&2 "################ Installation successful."
