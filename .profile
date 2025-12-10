@@ -37,12 +37,7 @@ esac
 
 case $os in
 	darwin) os=macos ;;
-	linux)
-		# OS-specific compiled binaries
-		if [ -r /etc/os-release ] ; then
-			os=$(awk -F= < /etc/os-release '/ID|VERSION_ID/ {s=$2 ; if ("\"" == substr(s, 1, 1)) s = substr(s, 2) ; if ("\"" == substr(s, length(s))) s = substr(s, 1, length(s)-1) ; arr[$1] = s} END {printf("%s%s\n", arr["ID"], arr["VERSION_ID"])}' | cut -d. -f1)
-		fi
-		;;
+	linux) [ ! -r /etc/os-release ] || os=$(awk -F= '/^(ID|VERSION_ID)=/{gsub(/"/,"",$2);a[$1]=$2}END{split(a["VERSION_ID"],v,".");printf "%s%s\n",a["ID"],v[1]}' /etc/os-release) ;;
 	*) echo >&2 "$basename: unrecognized os: \"$os\"" ;;
 esac
 
