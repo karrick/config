@@ -23,18 +23,14 @@ umask 022
 #	*) echo >&2 "INSIDE_EMACS: [$INSIDE_EMACS]" ;;
 # esac
 
-# Determine OS kernel
-os=$(uname -s | tr A-Z a-z)
-
-# Determine CPU architecture
 arch=$(uname -m)
-
 case $arch in
 	amd64|x86_64)  arch=amd64 ;;
 	arm64|aarch64) arch=arm64 ;;
 	*) echo >&2 "$basename: unrecognized architecture: \"$arch\"" ;;
 esac
 
+os=$(uname -s | tr A-Z a-z)
 case $os in
 	darwin) os=macos ;;
 	linux) [ ! -r /etc/os-release ] || os=$(awk -F= '/^(ID|VERSION_ID)=/{gsub(/"/,"",$2);a[$1]=$2}END{split(a["VERSION_ID"],v,".");printf "%s%s\n",a["ID"],v[1]}' /etc/os-release) ;;
