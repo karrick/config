@@ -80,7 +80,6 @@ for i in \
 		$XDG_DATA_HOME/${os}/${arch}/bin \
 		$XDG_DATA_HOME/${os}/bin \
 		$XDG_DATA_HOME/bin \
-		$HOME/.cargo/bin \
 		/opt/local/sbin \
 		/opt/local/libexec/gnubin \
 		/opt/local/bin \
@@ -165,6 +164,10 @@ unset i
 export EDITOR=emacsclient
 export VISUAL=emacsclient
 
+# CARGO_INSTALL_ROOT: The directory where 'cargo install' will install
+# programs.
+[ -n "$CARGO_INSTALL_ROOT" ] || export CARGO_INSTALL_ROOT="$XDG_DATA_HOME/${os}/${arch}/bin"
+
 # GOBIN: The directory where 'go install' will install a command. (To allow
 # sharing among different machines, places in HOME.)
 [ -n "$GOBIN" ] || export GOBIN="$XDG_DATA_HOME/${os}/${arch}/bin"
@@ -178,11 +181,6 @@ export VISUAL=emacsclient
 # modules. (Once downloaded, should never need to download again. Defaults to
 # $GOPATH/pkg/mod.)
 [ -n "$GOMODCACHE" ] || export GOMODCACHE="$XDG_DATA_HOME/go/pkg/mod"
-
-# GOPATH: Lists places to look for Go code.  (NOTE: Not sure whether this is
-# still needed.)
-#
-# [ -n "$GOPATH" ] || export GOPATH="$XDG_DATA_HOME/go"
 
 # GOTMPDIR: The directory where the go command will write temporary source
 # files, packages, and binaries. (Highly ephemeral data. Access latency
