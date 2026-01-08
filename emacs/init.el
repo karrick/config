@@ -11,6 +11,7 @@
 
 (require 'init-core)
 (require 'init-features)
+(require 'wip)
 
 (init-time "LOCAL"
 		   (if (locate-library "local")
