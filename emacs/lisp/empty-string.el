@@ -43,5 +43,4 @@
 				'("a" . "a")))
 
 (provide 'empty-string)
-
 ;;; empty-string.el ends here

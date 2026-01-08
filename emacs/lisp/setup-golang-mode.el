@@ -10,11 +10,8 @@
 ;;; Code:
 
 (progn
-  (require 'ksm-system-name)
-  (let ((xdg-data-home (getenv "XDG_DATA_HOME"))
-		(os (ksm/system-name)))
-	(env-set-when-null "GOBIN" (file-name-concat xdg-data-home (ksm/system-name) "bin") init-file-debug))
-
+  (require 'ksm-system)
+  (env-set-when-null "GOBIN" (file-name-concat (getenv "XDG_DATA_HOME") (ksm/system-type) (ksm/system-arch) "bin") init-file-debug)
   (env-set-when-null "GOCACHE" (file-name-concat (getenv "XDG_CACHE_HOME") "go-build") init-file-debug)
   (env-set-when-null "GOMODCACHE" (file-name-concat (getenv "XDG_DATA_HOME") "go" "pkg" "mod") init-file-debug)
   (env-set-when-null "GOTMPDIR" (file-name-concat (getenv "XDG_CACHE_HOME") "go-tmp") init-file-debug))
@@ -60,5 +57,4 @@
   :ensure t)
 
 (provide 'setup-golang-mode)
-
 ;;; setup-golang-mode.el ends here

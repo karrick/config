@@ -9,7 +9,7 @@
 
 (require 'empty-string)
 (require 'env-set-when-null)
-(require 'ksm-system-name)
+(require 'ksm-system)
 (require 'path)
 
 (let ((xdg-data-home (getenv "XDG_DATA_HOME")))
@@ -17,8 +17,9 @@
 	  (message "WARNING: XDG_DATA_HOME is empty.")
 	(let* ((base (list
 				  (file-name-concat "~" ".cargo" "bin")
-				  (file-name-concat xdg-data-home (ksm/system-name) "bin")
 				  (file-name-concat xdg-data-home "bin")
+				  (file-name-concat xdg-data-home (ksm/system-type) "bin")
+				  (file-name-concat xdg-data-home (ksm/system-type) (ksm/system-arch) "bin")
 				  (file-name-concat "~" "bin")
 				  ))
 		   (paths (if (eq system-type 'darwin)
