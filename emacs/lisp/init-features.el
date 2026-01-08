@@ -1,176 +1,427 @@
-;;; init-core.el --- Core initialization  -*- mode: emacs-lisp -*-
+;;; init-features.el --- Features initialization  -*- mode: emacs-lisp -*-
 
 ;;; Commentary:
 
 ;;; Code:
 
-(defmacro init-time (label &rest body)
-  "With label LABEL, evaluate BODY and report the elapsed time during init.
-LABEL is evaluated once.  BODY is evaluated normally.
-When `init-file-debug' is non-nil, display the elapsed time in the echo area."
-  `(let ((start (current-time)))
-	 ,@body
-	 (when init-file-debug
-	   (message "Init [%s]: %.3fs"
-				,label
-				(float-time (time-subtract (current-time) start))))))
+(defun ksm/large-buffer-p ()
+  "Return non-nil when size of current buffer is large."
+  (> (buffer-size) (* 512 1024))) ; 512 KB
 
-(defmacro when-debug-init (&rest body)
-  "Evaluate BODY only when `init-file-debug' is non-nil."
-  `(when init-file-debug
-	 ,@body))
+(defun ksm/remote-buffer-p ()
+  "Return non-nil when current buffer is remote (such as via TRAMP)."
+  (file-remote-p default-directory))
 
-(defmacro when-debug-message (format-string &rest args)
-  "Display a message formatted with FORMAT-STRING and ARGS when debugging.
-FORMAT-STRING is a format control string for `message'.
-ARGS are the format arguments.
-When `init-file-debug' is non-nil, display the message in the echo area."
-  `(when init-file-debug
-	 (let ((inhibit-message nil))
-	   (message ,format-string ,@args))))
+(init-time "SPELL CHECKER"
+		   (let ((cmd (executable-find "hunspell")))
+			 (if (null cmd)
+				 (message "Cannot find spelling program: consider installing 'hunspell' and 'hunspell-en-us' packages.")
+			   ;; When hunspell found, configure the spell-checking backend
+			   ;; and frontend.
 
-(init-time "CORE"
-		   (if (and (functionp 'native-comp-available-p)
-					(native-comp-available-p))
-			   (message "native-compilation is available")
-			 (message "native-compilation is *not* available"))
+			   ;; Backend: ispell
+			   (use-package ispell
+				 ;; ispell is the backend interface between Emacs and several
+				 ;; spell-check CLI programs.
+				 :custom
+				 (ispell-program-name "hunspell")
+				 (ispell-dictionary "en_US")
+				 ;; (ispell-extra-args '("-d" "en_US"))
+				 :config
+				 ;; (add-to-list 'spell-fu-ignore-major-modes 'json-mode)
+				 ;; (add-to-list 'spell-fu-ignore-major-modes 'csv-mode)
+				 ;; (add-to-list 'spell-fu-ignore-major-modes 'fundamental-mode)
+				 (when (eq system-type 'windows-nt)
+				   (setq ispell-hunspell-dict-paths-alist
+						 '(("en_US" "C:/Program Files/Hunspell/dictionaries")))))
 
-		   (when-debug-init
-			(setq use-package-verbose t
-				  use-package-expand-minimally nil
-				  use-package-compute-statistics t))
+			   ;; TODO: Because spell-fu excels in some buffer modes but can
+			   ;; do poorly in large buffers, would like to configure spell-fu
+			   ;; and flycheck, both for buffers where they do well. However,
+			   ;; it is imperative to not have both running in a particular
+			   ;; buffer. While I have been happy with flycheck for a long
+			   ;; time, I am giving spell-fu some testing.
 
-		   ;; When running in daemon mode, change process directory to user
-		   ;; home directory.
-		   (when (or (daemonp)
-					 (eq system-type 'windows-nt))
-			 (cd (file-name-as-directory "~")))
+			   ;; ;; Frontend: spell-fu
+			   ;; (use-package spell-fu
+			   ;;	 :ensure t
+			   ;;	 ;; :hook
+			   ;;	 ;; ((prog-mode . spell-fu-mode)
+			   ;;	 ;;  (text-mode . spell-fu-mode))
+			   ;;	 :custom
+			   ;;	 (spell-fu-idle-delay 0.25)   ;; or 0.0 for immediate
+			   ;;	 (spell-fu-word-delimit-camel-case t)
+			   ;;	 :init
+			   ;;	 (spell-fu-global-mode))
 
-		   (setq package-archives
-				 '(("gnu" . "https://elpa.gnu.org/packages/")
-				   ("nongnu" . "https://elpa.nongnu.org/nongnu/")
-				   ("melpa-stable" . "https://stable.melpa.org/packages/")
-				   ("melpa" . "https://melpa.org/packages/")))
+			   ;; Frontend: flycheck
+			   (use-package flyspell
+				 ;; flyspell drives the ispell backend and updates the UI.
+				 :hook ((prog-mode . flyspell-prog-mode)
+						(text-mode . flyspell-mode)))
+			   )))
 
-		   ;; When "cert" file in user-emacs-directory, presumably placed
-		   ;; there as a symbolic link to a host-specific yet non-standard
-		   ;; system cert file, then configure gnutls to trust it, before we
-		   ;; attempt to contact package-archives from which packages would be
-		   ;; downloaded.
-		   (if (not (gnutls-available-p))
-			   (message "GNU TLS is *not* available.")
-			 (with-eval-after-load 'gnutls
-			   (let ((cert (expand-file-name "cert" user-emacs-directory)))
-				 (when (file-readable-p cert)
-				   (message "Adding GNU TLS trustfiles %s" cert)
-				   (add-to-list 'gnutls-trustfiles cert)))))
-
-		   ;; On machines that do not have GNU version of `ls(1)` command, use
-		   ;; a substitute written in Elisp.
-		   (unless (memq system-type '(gnu gnu/linux gnu/kfreebsd))
-			 (setq ls-lisp-use-insert-directory-program nil)
-			 (require 'ls-lisp))
-
-		   ;; On Windows prefer using `plink.exe` program for TRAMP
-		   ;; connections.
-		   (when (and (eq system-type 'windows-nt) (executable-find "plink"))
-			 (setq tramp-default-method "plink")))
-
-(init-time "PROCESS ENVIRONMENT"
-		   ;; (require 'ksm-system)
-
-		   ;; To prioritize access latency over availability, ensure that
-		   ;; highly ephemeral cache data is stored on local machine rather
-		   ;; than a home directory that is potentially mounted over a
-		   ;; network. However, do place all cache files in a directory that
-		   ;; makes it trivial to identify the owner and optionally remove all
-		   ;; cache data.
+(init-time "WINDOW MANAGEMENT"
+		   ;; WINDOW MANAGEMENT: Mimic tmux commands for sanity, but
+		   ;; importantly, to keep ability to use emacs in a tmux frame, you
+		   ;; need to use a different key prefix in emacs than tmux.
 		   ;;
-		   ;; Platform-agnostic TMPDIR handling:
-		   ;; - Respect explicit TMPDIR from the environment
-		   ;; - Fall back to `temporary-file-directory`
-		   ;; - Avoid appending username when already user-specific
-		   (setenv
-			"TMPDIR"
-			(let* ((username (user-login-name (user-uid)))
-				   (base (file-name-as-directory
-						  (or (getenv "TMPDIR")
-							  temporary-file-directory))))
-			  (cond
-			   ;; TMPDIR already appears user-specific (macOS, Windows, systemd)
-			   ((string-match-p
-				 (concat "/" (regexp-quote username) "/?$")
-				 (directory-file-name base))
-				(directory-file-name base))
-			   ;; Otherwise create a per-user subdirectory
-			   (t
-				(expand-file-name username base)))))
-
-		   (require 'env-set-when-null)
-
-		   ;; XDG base dirs — meaningful on Unix; map to roughly corresponding
-		   ;; locations on Windows.
+		   ;; REQUIREMENTS:
 		   ;;
-		   ;; https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
-		   (cond
-			((eq system-type 'windows-nt)
-			 (env-set-when-null "XDG_CACHE_HOME"
-								(expand-file-name "AppData/Local/Temp"
-												  (expand-file-name "~"))
-								init-file-debug)
-			 (env-set-when-null "XDG_CONFIG_HOME"
-								(expand-file-name "AppData/Roaming"
-												  (expand-file-name "~"))
-								init-file-debug)
-			 (env-set-when-null "XDG_DATA_HOME"
-								(expand-file-name "AppData/Local"
-												  (expand-file-name "~"))
-								init-file-debug)
-			 (env-set-when-null "XDG_STATE_HOME"
-								(expand-file-name "AppData/Local/State"
-												  (expand-file-name "~"))
-								init-file-debug))
-			(t
-			 (env-set-when-null "XDG_CACHE_HOME" (getenv "TMPDIR") init-file-debug)
-			 (env-set-when-null "XDG_CONFIG_HOME" (expand-file-name "~/.config") init-file-debug)
-			 (env-set-when-null "XDG_DATA_HOME" (expand-file-name "~/.local/share") init-file-debug)
-			 (env-set-when-null "XDG_STATE_HOME" (expand-file-name "~/.local/state") init-file-debug)))
+		   ;;   1. Fluidly change which window is current. Preferably hold
+		   ;;   down one or more modifier keys and press cursor direction.
+		   ;;
+		   ;;   2. Fluidly swap current buffer with an adjacent buffer,
+		   ;;   keeping the active buffer active. Preferably hold down one or
+		   ;;   more modifier keys and press cursor direction.
+		   ;;
+		   ;;   3. Temporarily work on one buffer, then restore balanced
+		   ;;   buffer configuration. (Bind #'maximize-window)
 
-		   (let* ((state (getenv "XDG_STATE_HOME"))
-				  (history (file-name-concat state "history"))
-				  (emacs (file-name-concat history "emacs")))
-			 (when (and state (file-directory-p history))
-			   (setenv "HISTFILE" emacs)))
+		   (setq frame-title-format '("%b@"
+									  (:eval (or (file-remote-p
+												  default-directory 'host)
+												 system-name))
+									  " - Emacs"))
 
-		   ;; After XDG_DATA_HOME is set, can set PATH environment variable to
-		   ;; any of the directories I typically use, provided that they
-		   ;; exist.
-		   (use-package paths)
+		   (use-package buffer-move
+			 :ensure t
+			 :bind (("C-x 4 i" . buf-move-up) ; swap buffer that has point with buffer above it
+					("C-x 4 k" . buf-move-down) ; swap buffer that has point with buffer below it
+					("C-x 4 j" . buf-move-left) ; swap buffer that has point with buffer on its left
+					("C-x 4 l" . buf-move-right))) ; swap buffer that has point with buffer on its right
 
-		   ;; Elide `git(1)` paging capability for sub-processes:
-		   (setenv "GIT_PAGER" "")
+		   (use-package default-text-scale
+			 :ensure t
+			 :config (default-text-scale-mode))
 
-		   ;; In lieu of paging files, dump them to a buffer using `cat(1)`:
-		   (let ((pager (or (executable-find "cat")
-							(executable-find "type"))))
-			 (when pager (setenv "PAGER" pager)))
+		   ;; ;; eat is Emulate A Terminal, which I am considering as a replacement for
+		   ;; ;; xterm-color.
+		   ;; (use-package eat
+		   ;;   :custom
+		   ;;   (eat-enable-auto-line-mode t)
+		   ;;   :ensure t)
 
-		   ;; Make certain any child process knows to use `emacsclient(1)` as
-		   ;; editor and can route file editing requests to this process.
-		   (let ((cmd (executable-find "emacsclient")))
-			 (when cmd
-			   (setenv "EDITOR" cmd)
-			   (setenv "VISUAL" cmd))))
+		   (use-package emacs
+			 :bind ("C-x C-n" . other-window))
 
-(init-time "WRAP UP"
-		   (fset 'yes-or-no-p 'y-or-n-p)
-		   (prefer-coding-system 'utf-8)
-		   (put 'narrow-to-region 'disabled nil)
-		   ;; (desktop-save-mode 0)
-		   ;; (fido-mode 1)
-		   ;; (ido-mode 1)
-		   ;; (vertico-mode)
-		   )
+		   (use-package ibuffer
+			 :ensure t
+			 :bind (("C-x C-b" . #'ibuffer)))
 
-(provide 'init-core)
-;;; init-core.el ends here
+		   (use-package ksm-window
+			 :bind (("C-x w l" . ksm-window-config-load) ; restore window configuration from hash
+					("C-x w s" . ksm-window-config-save) ; copy window configuration to hash
+					("C-x w x" . ksm-window-config-swap) ; swap window configuration
+					("C-x 0" . ksm/delete-window)		  ; extension to existing behavior
+					("C-x 1" . ksm/delete-other-windows) ; extension to existing behavior
+					;; ("C-x 2" . split-window-below) ; this is the default key binding
+					;; ("C-x 3" . split-window-right) ; this is the default key binding
+					("C-x -" . ksm-window-zoom-out) ; pop and restore window configuration from stack
+					("C-x +" . ksm-window-zoom-in) ; push window configuration to stack and delete other windows
+					("C-x C-p" . other-window-backward)))
+
+		   (use-package ksm-window-scrolling
+			 :bind (("M-N" . ksm/forward-line-scroll-up)
+					("M-P" . ksm/previous-line-scroll-down)
+					("M-n" . scroll-n-lines-forward)
+					("M-p" . scroll-n-lines-backward)))
+
+		   (use-package switch-window
+			 :ensure t
+			 :bind (("C-x q" . switch-window) ; like tmux C-z q, but only shows numbers to select when more than two windows
+					;; ("C-x 0" . switch-window-then-delete)
+					;; ("C-x 1" . switch-window-then-maximize) ; like tmux C-z 1, but without the ability to toggle
+					;; ("C-x \"" . switch-window-then-split-below) ; like tmux C-z "
+					;; ("C-x %" . switch-window-then-split-right) ; like tmux C-z %
+
+					;; ("C-x 4 0" . switch-window-then-kill-buffer)
+					;; ("C-x 4 d" . switch-window-then-dired)
+					;; ("C-x 4 f" . switch-window-then-find-file)
+					;; ("C-x 4 m" . switch-window-then-compose-mail)
+					;; ("C-x 4 r" . switch-window-then-find-file-read-only)
+					;; ("C-x 4 s" . switch-window-then-swap-buffer)
+
+					;; ("C-x 4 C-f" . switch-window-then-find-file)
+					;; ("C-x 4 C-o" . switch-window-then-display-buffer)
+					))
+
+		   (use-package windmove
+			 :bind (("M-I" . windmove-up) ; move point to buffer above it
+					("M-K" . windmove-down) ; move point to buffer below it
+					("M-L" . windmove-right) ; move point to buffer on its right
+					("M-J" . windmove-left))) ; move point to buffer on its left
+
+		   (use-package window
+			 :bind ("C-x =" . #'balance-windows))
+
+		   ;; xterm-color is superior to ansi-color
+		   ;; (https://github.com/atomontage/xterm-color)
+		   (use-package xterm-color
+			 :config
+			 ;; TERM is a Unix concept; avoid forcing it on Windows
+			 (unless (eq system-type 'windows-nt)
+			   (setenv "TERM" "xterm-256color"))
+
+			 ;; compilation buffers
+			 (setq compilation-environment '("TERM=xterm-256color"))
+			 (defun my/advice-compilation-filter (f proc string)
+			   "Convert ANSI color sequences appended to compilation buffer to Emacs text properties."
+			   (funcall f proc (xterm-color-filter string)))
+			 (advice-add 'compilation-filter :around #'my/advice-compilation-filter)
+
+			 ;; eshell mode
+			 (with-eval-after-load 'esh-mode
+			   (add-hook 'eshell-before-prompt-hook
+						 #'(lambda ()
+							 (setq xterm-color-preserve-properties t)))
+			   (add-to-list 'eshell-preoutput-filter-functions 'xterm-color-filter)
+			   (setq eshell-output-filter-functions
+					 (remove 'eshell-handle-ansi-color eshell-output-filter-functions)))
+
+			 ;; shell mode
+			 (setq comint-output-filter-functions
+				   (cons #'comint-osc-process-output
+						 (remove 'ansi-color-process-output comint-output-filter-functions)))
+
+			 (add-hook 'shell-mode-hook
+					   #'(lambda ()
+						   ;; (setenv "ETERM" (getenv-internal "TERM" initial-environment)) ; hack to make original term available to inferior shells
+
+						   ;; Disable font-locking in this buffer to improve
+						   ;; performance
+						   (font-lock-mode 0)
+						   ;; Prevent font-locking from being re-enabled in
+						   ;; this buffer
+						   (make-local-variable 'font-lock-function)
+						   (setq font-lock-function (lambda (_) nil))
+						   ;; Add xterm-color hook
+						   (add-hook 'comint-preoutput-filter-functions 'xterm-color-filter nil t)))
+
+			 :ensure t)
+
+		   (use-package zenburn-theme
+			 :config
+			 (load-theme 'zenburn t)
+			 :ensure t))
+
+(init-time "MISCELLANEOUS"
+		   ;; prevent stuttering of command in inferior shell processes.
+		   (defun my-comint-init ()
+			 (setq comint-process-echoes t))
+		   (add-hook 'comint-mode-hook 'my-comint-init)
+
+		   (use-package async-shell-command-wrapper
+			 :bind (("M-&" . ksm/async-shell-command)
+					("ESC &" . ksm/async-shell-command)
+					("<f7>" . ksm/async-shell-command)))
+
+		   (use-package browser-open)
+
+		   (use-package clean-and-indent
+			 :bind ("<f9>" . clean-and-indent))
+
+		   ;; company -- complete anything
+		   (use-package company
+			 :after eglot
+			 :hook (eglot-managed-mode prog-mode text-mode)
+			 :ensure t)
+
+		   (use-package copy-and-comment
+			 :bind ("<f8>" . copy-and-comment))
+
+		   (use-package dictionary
+			 ;; https://www.masteringemacs.org/article/wordsmithing-in-emacs
+			 :bind ("M-#" . dictionary-lookup-definition)
+
+			 :custom (dictionary-server "dict.org")
+
+			 :config
+			 (add-to-list 'display-buffer-alist
+						  '("^\\*Dictionary\\*" display-buffer-in-side-window
+							(side . left)
+							(window-width . 50))))
+
+		   (use-package empty-string)
+
+		   (use-package find-file-dynamic
+			 :after find-file-in-repository)
+
+		   (use-package hrg)
+		   (use-package ksm-align)
+		   (use-package ksm-list)
+		   (use-package make-shebang-executable)
+
+		   ;; By default bind "C-x C-r" to rgrep, but when ripgrep command and deadgrep
+		   ;; package are both available, rebind to the latter to use the former...
+		   (let ((cmd (executable-find "rg")))
+			 (if (not cmd)
+				 (global-set-key (kbd "C-x C-r") #'rgrep)
+			   (use-package deadgrep
+				 :bind (("C-x C-r" . deadgrep))
+				 :ensure t)))
+
+		   ;; serial-term
+		   (when nil
+			 ;; example use
+			 (serial-process-configure :process "/dev/ttyS0" :speed 1200))
+
+		   (require 'setup-org-mode)
+		   (use-package sort-commas)
+
+		   ;; NOTE: Seems to have been replaced by 'prog-fill-reindent-defun in Emacs
+		   ;; 30.1.
+		   (use-package unfill
+			 :bind ("M-q" . unfill-toggle)
+			 :ensure t)
+
+		   (use-package which-key
+			 :ensure t
+			 :config (which-key-mode)))
+
+(init-time "VCS"
+		   (with-eval-after-load 'vc-hooks
+			 (define-key vc-prefix-map "=" #'vc-ediff))
+
+		   ;; fossil
+		   (autoload 'vc-fossil-registered "vc-fossil")
+		   (add-to-list 'vc-handled-backends 'Fossil)
+
+		   ;; svn
+		   (autoload 'svn-status "psvn"
+			 "Examine the status of Subversion working copy in directory DIR.
+If ARG is -, allow editing of the parameters. One could add -N to
+run svn status non recursively to make it faster.  For every
+other non nil ARG pass the -u argument to `svn status', which
+asks svn to connect to the repository and check to see if there
+are updates there.
+
+If there is no .svn directory, examine if there is CVS and run
+`cvs-examine'. Otherwise ask if to run `dired'."
+			 t))
+
+(init-time "PROGRAMMING"
+		   ;; Tabs and indentation.
+
+		   (defvaralias 'c-basic-offset 'tab-width)
+		   (defvaralias 'cperl-indent-level 'tab-width)
+		   (defvaralias 'perl-indent-level 'tab-width)
+		   (defvaralias 'yaml-indent-level 'tab-width)
+
+		   ;; (add-hook 'prog-mode-hook #'highlight-indent-guides-mode)
+		   (add-hook 'prog-mode-hook #'hl-line-mode)
+
+		   (defun aj-toggle-fold ()
+			 "Toggle fold all lines larger than indentation on current line."
+			 (interactive)
+			 (let ((col 1))
+			   (save-excursion
+				 (back-to-indentation)
+				 (setq col (+ 1 (current-column)))
+				 (set-selective-display
+				  (if selective-display nil (or col 1))))))
+		   (global-set-key (kbd "C-x $") #'aj-toggle-fold)
+
+		   (use-package flycheck
+			 ;; :defer t
+			 :config
+			 (global-flycheck-mode)
+			 ;; golang
+			 (let ((cmd (executable-find "staticcheck")))
+			   (if (null cmd)
+				   (message "Cannot find 'staticcheck' program.")
+				 (setq flycheck-go-staticcheck-executable cmd)
+				 (add-hook 'go-mode-hook 'flycheck-mode)))
+			 ;; shell
+			 ;; TODO: Consider https://github.com/cuonglm/flycheck-checkbashisms
+			 (let ((cmd (executable-find "shellcheck")))
+			   (if (null cmd)
+				   (message "Cannot find 'shellcheck' program.")
+				 (setq flycheck-sh-shellcheck-executable cmd)
+				 (add-hook 'sh-mode-hook 'flycheck-mode)))
+			 ;; python
+			 (let ((cmd (executable-find "ruff")))
+			   (if (null cmd)
+				   (message "Cannot find 'ruff' program.")
+				 (setq flycheck-python-ruff-executable cmd)
+				 (add-hook 'python-mode-hook 'flycheck-mode)))
+			 :ensure t)
+
+		   (use-package flycheck-eglot
+			 :after flycheck eglot
+			 :defer t
+			 :ensure t
+			 :config
+			 (global-flycheck-eglot-mode 1))
+
+		   (add-hook 'markdown-mode-hook #'visual-line-mode)
+
+		   (require 'setup-elisp-mode)
+		   (require 'setup-golang-mode)
+
+		   (use-package nix-mode
+			 :ensure t
+			 :mode "\\.nix\\'")
+
+		   (require 'setup-javascript-mode)
+		   (require 'setup-python-mode)
+
+		   (use-package puppet-mode
+			 :mode "\\.pp\\'"
+			 :ensure t)
+
+		   (require 'setup-eglot)
+
+		   (require 'setup-ruby-mode)
+		   ;; (require 'setup-rust-mode)
+		   (require 'setup-shell-script-mode)
+		   (require 'setup-tree-sitter)
+		   (require 'setup-zig-mode)
+
+		   (use-package yasnippet
+			 :ensure t))
+
+(init-time "KEY BINDINGS"
+		   (global-set-key (kbd "C-x C-b") #'ibuffer)
+
+		   (require 'compile)
+		   (global-set-key (kbd "<f4>")  #'recompile)
+		   (global-set-key (kbd "<f5>")  #'compile)
+
+		   (global-set-key (kbd "<f6>")  #'delete-indentation)
+		   (global-set-key (kbd "<f10>") #'revert-buffer)
+
+		   ;; (define-key grep-mode-map (kbd "C-x C-q") #'wgrep-change-to-wgrep-mode)
+
+;;; The following key-bindings (shown along with their default functions)
+;;; below are disabled:
+		   (global-unset-key (kbd "C-z")) ; suspend-frame
+		   (global-unset-key (kbd "s-m")) ; iconify-frame
+		   (global-unset-key (kbd "s-p")) ; ns-print-buffer
+		   (global-unset-key (kbd "s-q")) ; save-buffers-kill-emacs
+		   (global-unset-key (kbd "s-s")) ; save-buffer
+		   (global-unset-key (kbd "s-t")) ; menu-set-font
+		   (global-unset-key (kbd "s-z")) ; undo
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		   ;; 70 Sort
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+		   (use-package expand-region
+			 :disabled
+			 :bind (("M-=" . er/expand-region)
+					("ESC =" . er/expand-region)
+					("M--" . er/contract-region)
+					("ESC -" . er/contract-region)))
+
+		   (use-package multiple-cursors
+			 :disabled
+			 :bind (("C-S-c C-S-c" . mc/edit-lines)
+					("C-c C-S-c" . mc/edit-lines)
+					("C->" . mc/mark-next-like-this)
+					("C-<" . mc/mark-previous-like-this)
+					("C-c C-<" . mc/mark-all-like-this)
+					("C-c C->" . mc/mark-more-like-this-extended))))
+
+(provide 'init-features)
+;;; init-features.el ends here

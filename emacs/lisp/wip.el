@@ -1,4 +1,4 @@
-;;; localhost -- code to only run on this host
+;;; wip -- work in progress
 
 ;;; Commentary:
 
@@ -9,13 +9,9 @@
 
 ;; auto-complete source of Emoji
 (use-package ac-emoji
-  ;; :config
-  ;; (add-hook 'markdown-mode-hook #'ac-emoji-setup)
-  ;; (add-hook 'git-commit-mode-hook #'ac-emoji-setup)
   :defer t
-  ;; :ensure t
-  :hook ((git-commit-mode markdown-mode) . 'ac-emoji-setup)
-  )
+  :ensure t
+  :hook ((git-commit-mode markdown-mode) . ac-emoji-setup))
 
 (defun colorize-buffer ()
   "Convert ANSI color sequences in buffer to Emacs faces."
@@ -40,5 +36,25 @@
 (add-hook 'compilation-filter-hook
 		  'compilation-apply-ansi-color)
 
-(provide 'localhost)
-;;; localhost.el ends here
+;; (defun ksm/json-format ()
+;;   (interactive)
+;;   (save-excursion
+;;	(shell-command-on-region (region-beginning)
+;;							 (region-end)
+;;							 "fx ."
+;;							 (buffer-name)
+;;							 t)))
+
+;; (when (executable-find "fx"))
+
+(defun ksm/json-format ()
+  (interactive)
+  (save-excursion
+	(shell-command-on-region (point-min)
+							 (point-max)
+							 "fx . | jq -S . | fx ."
+							 (buffer-name)
+							 t)))
+
+(provide 'wip)
+;;; wip.el ends here
