@@ -194,5 +194,8 @@ unix2dos () { ruby -pe '$_=$_.gsub(/$/, "\r")' <"$1" >"$2" ; }
 
 [ ! -r "$HOME/.cargo/env" ] || . "$HOME/.cargo/env"
 
+export DEBEMAIL=karrick@gmail.com
+export DEBFULLNAME="Karrick S. McDermott"
+
 # [ "$_SHELL" != "sh" -a "$TERM" != "dumb" ] && which starship >/dev/null 2>&1 && eval "$(starship init $_SHELL)"
 unset _SHELL
