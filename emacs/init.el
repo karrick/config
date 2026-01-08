@@ -11,7 +11,10 @@
 
 (require 'init-core)
 (require 'init-features)
-(require 'wip)
+
+(if (locate-library "wip")
+	(require 'wip)
+  (message "no wip file found"))
 
 (init-time "LOCAL"
 		   (if (locate-library "local")
