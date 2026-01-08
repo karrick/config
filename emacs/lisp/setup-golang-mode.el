@@ -1,44 +1,43 @@
-;;; setup-golang-mode -- customizations for Go programming language
+;;; setup-golang-mode.el --- Go configuration -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 
-;; After several years of testing eglot and lsp-mode, eglot has had superior
-;; performance and operability benefits over the competing lsp-mode package as
-;; a Language Server Protocol client.  Furthermore, recently, eglot has been
-;; moved into Emacs distribution.
+;; Eglot is used as the LSP client for Go due to superior performance and
+;; operability compared to lsp-mode.  Eglot is included in modern Emacs.
 
 ;;; Code:
 
-(progn
-  (require 'ksm-system)
-  (env-set-when-null "GOBIN" (file-name-concat (getenv "XDG_DATA_HOME") (ksm/system-type) (ksm/system-arch) "bin") init-file-debug)
-  (env-set-when-null "GOCACHE" (file-name-concat (getenv "XDG_CACHE_HOME") "go-build") init-file-debug)
-  (env-set-when-null "GOMODCACHE" (file-name-concat (getenv "XDG_DATA_HOME") "go" "pkg" "mod") init-file-debug)
-  (env-set-when-null "GOTMPDIR" (file-name-concat (getenv "XDG_CACHE_HOME") "go-tmp") init-file-debug))
+(require 'env-set-when-null)
+(require 'ksm-system)
+
+;;;; Environment setup
+
+(env-set-when-null "GOBIN" (file-name-concat (getenv "XDG_DATA_HOME") (ksm/system-type) (ksm/system-arch) "bin") init-file-debug)
+(env-set-when-null "GOCACHE" (file-name-concat (getenv "XDG_CACHE_HOME") "go-build") init-file-debug)
+(env-set-when-null "GOMODCACHE" (file-name-concat (getenv "XDG_DATA_HOME") "go" "pkg" "mod") init-file-debug)
+(env-set-when-null "GOTMPDIR" (file-name-concat (getenv "XDG_CACHE_HOME") "go-tmp") init-file-debug)
 
 (let ((dir (getenv "GOTMPDIR")))
   (unless (file-directory-p dir)
 	(make-directory dir 't)
 	(message "Created GOTMPDIR: %s" dir)))
 
-(use-package go-mode
-  :after eglot
-  :mode "\\.go\\'"
+;;;; Go buffer setup
 
-  :config
+(defun my-go-mode-setup ()
+  "Common settings for Go buffers."
+  (eglot-ensure)
 
-  ;; Use gogetdoc as it provides better documentation than godoc and godef.
-  (when (executable-find "gogetdoc")
-	(setq godoc-at-point-function #'godoc-gogetdoc))
-
-  ;; Prefer goimports, but when not found, use gofmt.
-  (setq gofmt-command (or (executable-find "goimports")
-						  (executable-find "gofmt")))
-  (add-hook 'go-mode-hook
-			#'(lambda ()
-				(if (functionp 'eglot-format-buffer)
-					(add-hook 'before-save-hook #'eglot-format-buffer nil t)
-				  (add-hook 'before-save-hook #'gofmt-before-save nil t))))
+  ;; Format on save: prefer Eglot; fall back to gofmt.
+  (let ((formatter
+		 (cond
+		  ((fboundp 'eglot-format-buffer) #'eglot-format-buffer)
+		  ((executable-find "gofmt")    #'gofmt-before-save)
+		  (t
+		   (my-warn-missing-tool "gofmt" "Go formatting on save")
+		   nil))))
+	(when formatter
+	  (add-hook 'before-save-hook formatter nil t)))
 
   (when nil
 	;; Fix parsing of error and warning lines in compiler output.
@@ -52,9 +51,49 @@
 				 '(go-panic . ("^[[:space:]]*\\([_a-zA-Z./][_a-zA-Z0-9./]*\\):\\([0-9]+\\)[[:space:]].*$" 1 2)))
 	;; override.
 	(add-to-list 'compilation-error-regexp-alist 'go-test t)
-	(add-to-list 'compilation-error-regexp-alist 'go-panic t))
+	(add-to-list 'compilation-error-regexp-alist 'go-panic t)))
 
-  :ensure t)
+;;;; Go mode
+
+(use-package go-mode
+  :ensure t
+
+  :mode "\\.go\\'"
+
+  :config
+
+  ;; (my-with-cli!
+  ;;	  (fmt ("goimports" "gofmt") "Go formatting commands")
+  ;;	(setq gofmt-command fmt))
+
+  ;; (my-with-cli!
+  ;;	  (fmt ("gogetdoc") "Go documentation commands")
+  ;;	(setq godoc-at-point-function #'godoc-gogetdoc))
+
+  :hook
+  ((go-mode go-ts-mode) . my-go-mode-setup)
+  ((go-mode go-ts-mode) . flycheck-mode))
+
+;;;; gopls (Go language server) configuration
+
+(with-eval-after-load 'eglot
+  ;; Register gopls for Go modes
+  (add-to-list 'eglot-server-programs
+			   '((go-mode go-ts-mode) . ("gopls")))
+
+  ;; gopls settings (optional)
+  (add-to-list 'eglot-workspace-configuration
+			   '(:gopls .
+						(:usePlaceholders t
+										  :staticcheck t
+										  :completeUnimported t))))
+
+(with-eval-after-load 'flycheck
+  (if-let ((cmd (executable-find "staticcheck")))
+	  (setq flycheck-go-staticcheck-executable cmd)
+	(my-warn-missing-tool
+	 "staticcheck"
+	 "Flycheck Go checker (static analysis)")))
 
 (provide 'setup-golang-mode)
 ;;; setup-golang-mode.el ends here
