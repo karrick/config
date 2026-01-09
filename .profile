@@ -32,7 +32,7 @@ esac
 
 os=$(uname -s | tr A-Z a-z)
 case $os in
-	darwin) os=macos ;;
+	darwin) : ;;
 	linux) [ ! -r /etc/os-release ] || os=$(awk -F= '/^(ID|VERSION_ID)=/{gsub(/"/,"",$2);a[$1]=$2}END{split(a["VERSION_ID"],v,".");printf "%s%s\n",a["ID"],v[1]}' /etc/os-release) ;;
 	*) echo >&2 "$basename: unrecognized os: \"$os\"" ;;
 esac

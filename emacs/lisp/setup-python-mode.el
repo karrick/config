@@ -2,11 +2,37 @@
 
 ;;; Code:
 
+(defun my-python-select-formatter ()
+  "Select the appropriate formatter for this Python buffer."
+  (cond
+   ;; Prefer eglot
+   ((eglot-managed-p)
+	(when (bound-and-true-p ruff-format-on-save-mode)
+	  (ruff-format-on-save-mode -1))
+	(add-hook 'before-save-hook
+			  #'my-eglot-format-and-organize-imports
+			  nil t))
+
+   ;; Fall back to ruff-format
+   ((and (executable-find "ruff")
+		 (fboundp 'ruff-format-on-save-mode))
+	(ruff-format-on-save-mode 1))
+
+   (t
+	(my-warn-missing-tool "ruff" "Python formatting and imports"))))
+
 (defun my-python-mode-setup ()
   "Common settings for Python buffers."
+  (eglot-ensure)
+
   (setq-local fill-column 80
 			  indent-tabs-mode nil
-			  tab-width 4))
+			  tab-width 4)
+
+  (my-format-on-save!
+   (when (executable-find "ruff")
+	 #'ruff-format-buffer)
+   "Python"))
 
 ;; flycheck should already be loaded, but repeated here.
 (use-package flycheck
@@ -14,16 +40,8 @@
   :defer t)
 
 (use-package python
-  :after eglot flycheck
-
-  :config
-  (let ((cmd (executable-find "ruff")))
-	(if (null cmd)
-		(message "Cannot find 'ruff' program.")
-	  (setq flycheck-python-ruff-executable cmd)))
-
   :hook
-  ((python-mode python-ts-mode) . (eglot-ensure my-python-mode-setup)))
+  ((python-mode python-ts-mode) . my-python-mode-setup))
 
 (use-package pyvenv
   :after python
@@ -51,7 +69,6 @@
 
 (use-package ruff-format
   :ensure t
-  :hook ((python-mode python-ts-mode) . ruff-format-on-save-mode)
   :when (executable-find "ruff"))
 
 (provide 'setup-python-mode)

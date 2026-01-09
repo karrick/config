@@ -4,59 +4,6 @@
 
 ;;; Code:
 
-(defvar my-missing-tools-warned (make-hash-table :test 'equal)
-  "Tools we have already warned about this session.")
-
-(defun my-warn-missing-tool (tool &optional context)
-  "Warn once per session if TOOL is not found.  CONTEXT is a short string describing where it is used."
-  (unless (executable-find tool)
-	(unless (gethash tool my-missing-tools-warned)
-	  (puthash tool t my-missing-tools-warned)
-	  (display-warning 'external-tool
-					   (format "Optional tool '%s' not found%s." tool
-							   (if context (format " (%s)" context) ""))
-					   :warning))))
-
-(defun my-with-cli* (clis callback &optional context)
-  "Find the first available executable in CLIS and call CALLBACK with its path.
-
-CLIS is a list of program names strings.  The first one found in
-`exec-path` is used.
-
-CALLBACK is a function of one argument, which is the absolute
-file-system path to the executable.  If none of the executables in CLIS
-are found, emit a warning (once per session) using
-`my-warn-missing-tool` and return nil.
-
-CONTEXT is an optional short description included in the warning
-message."
-  (declare (indent 1))
-  (let ((path
-		 (seq-some (lambda (cli)
-					 (executable-find cli))
-				   clis)))
-	(if (not path)
-		(progn (my-warn-missing-tool (mapconcat #'identity clis ", ") context)
-			   nil)
-	  (funcall callback (file-name-nondirectory path)))))
-
-(defmacro my-with-cli! ((var clis &optional context) &rest body)
-  "If one of CLIS is found, bind its path to VAR and evaluate BODY.
-
-CLIS is a list of executable names (strings).  The first one found in
-`exec-path` is used.
-
-VAR is bound to the absolute path of the executable.  If none of the
-programs files are found, emit a warning (once per session) using
-`my-warn-missing-tool` and skip BODY.
-
-CONTEXT is an optional short description included in the warning
-message."
-  (declare (indent 1))
-  `(my-with-cli* ,clis
-	 (lambda (,var) ,@body)
-	 ,context))
-
 (defmacro init-time (label &rest body)
   "With label LABEL, evaluate BODY and report the elapsed time during init.
 LABEL is evaluated once.  BODY is evaluated normally.
