@@ -16,10 +16,9 @@
 	(require 'wip)
   (message "no wip file found"))
 
-(init-time "LOCAL"
-		   (if (locate-library "local")
-			   (require 'local)
-			 (message "no local file found")))
+(if (locate-library "local")
+	(require 'local)
+  (message "no local file found"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 99 Custom Set Variables
