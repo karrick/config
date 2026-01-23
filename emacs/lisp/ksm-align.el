@@ -10,5 +10,4 @@
   (align-regexp BEG END "\\(\\s-*\\)\\S-+" 1 1 t))
 
 (provide 'ksm-align)
-
 ;;; ksm-align.el ends here

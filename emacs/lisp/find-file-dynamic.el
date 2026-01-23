@@ -29,5 +29,4 @@
 	  (find-alternate-file fname))))
 
 (provide 'find-file-dynamic)
-
 ;;; find-file-dynamic.el ends here

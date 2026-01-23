@@ -54,5 +54,4 @@
 	(add-to-list 'major-mode-remap-alist (list mode))))
 
 (provide 'setup-tree-sitter)
-
 ;;; setup-tree-sitter.el ends here

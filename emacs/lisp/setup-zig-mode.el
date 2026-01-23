@@ -22,5 +22,4 @@
   :ensure t)
 
 (provide 'setup-zig-mode)
-
 ;;; setup-zig-mode.el ends here

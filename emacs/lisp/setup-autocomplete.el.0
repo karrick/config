@@ -17,5 +17,4 @@
 (ac-flyspell-workaround)
 
 (provide 'setup-autocomplete)
-
 ;;; setup-autocomplete.el ends here

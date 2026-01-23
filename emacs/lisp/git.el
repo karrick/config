@@ -83,3 +83,4 @@
 	(message "Pushing")))
 
 (provide 'git)
+;;; git.el ends here

@@ -36,5 +36,4 @@
 		  (path-prepend path))))))
 
 (provide 'paths)
-
 ;;; paths.el ends here

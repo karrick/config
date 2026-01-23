@@ -42,5 +42,4 @@
   (convert-standard-filename (expand-file-name (concat a "/" b))))
 
 (provide 'path)
-
 ;;; path.el ends here

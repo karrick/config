@@ -12,9 +12,8 @@ region.  Otherwise, prompt user for URL to open."
   (interactive "P")
   (browse-url
    (cond ((stringp url) url)
-	 ((use-region-p) (buffer-substring (region-beginning) (region-end)))
-	 (t (read-string "URL: ")))))
+		 ((use-region-p) (buffer-substring (region-beginning) (region-end)))
+		 (t (read-string "URL: ")))))
 
 (provide 'browser-open)
-
 ;;; browser-open.el ends here

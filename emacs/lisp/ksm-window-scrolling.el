@@ -92,5 +92,4 @@
 
 
 (provide 'ksm-window-scrolling)
-
 ;;; ksm-window-scrolling.el ends here

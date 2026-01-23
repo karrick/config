@@ -23,5 +23,4 @@
 	(message "cannot sort-spaces without region selected")))
 
 (provide 'sort-commas)
-
 ;;; sort-commas.el ends here

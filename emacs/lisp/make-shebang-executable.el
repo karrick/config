@@ -22,5 +22,4 @@
 (add-hook 'after-save-hook #'make-shebang-executable)
 
 (provide 'make-shebang-executable)
-
 ;;; make-shebang-executable.el ends here

@@ -18,5 +18,4 @@
 	  (message "Cannot find history directory: %s" directory))))
 
 (provide 'hrg)
-
 ;;; hrg.el ends here

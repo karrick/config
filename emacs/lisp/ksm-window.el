@@ -188,5 +188,4 @@
   (other-window (- (prefix-numeric-value n))))
 
 (provide 'ksm-window)
-
 ;;; ksm-window.el ends here

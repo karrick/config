@@ -28,5 +28,4 @@
    (ksm/drop (1+ i) list)))
 
 (provide 'ksm-list)
-
 ;;; ksm-list.el ends here

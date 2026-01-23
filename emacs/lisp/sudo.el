@@ -19,5 +19,4 @@
 			 buffer-file-name))))
 
 (provide 'sudo)
-
 ;;; sudo.el ends here

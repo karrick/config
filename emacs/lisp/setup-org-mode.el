@@ -75,5 +75,4 @@
   (org-mode . visual-line-mode))
 
 (provide 'setup-org-mode)
-
 ;;; setup-org-mode.el ends here

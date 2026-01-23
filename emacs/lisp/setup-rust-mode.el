@@ -49,5 +49,4 @@
   :ensure t)
 
 (provide 'setup-rust-mode)
-
 ;;; setup-rust-mode.el ends here

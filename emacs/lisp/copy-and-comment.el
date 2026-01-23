@@ -8,12 +8,11 @@
   "Copy from BEG to END and paste commented-out version above point."
   (interactive "*r")
   (if mark-active
-      (save-excursion
-	(copy-region-as-kill beg end)
-	(yank)
-	(comment-region beg end))
-    (message "cannot copy-and-comment without region selected")))
+	  (save-excursion
+		(copy-region-as-kill beg end)
+		(yank)
+		(comment-region beg end))
+	(message "cannot copy-and-comment without region selected")))
 
 (provide 'copy-and-comment)
-
 ;;; copy-and-comment.el ends here
