@@ -191,12 +191,6 @@ Example:
 			 :ensure t
 			 :hook (eglot-managed-mode prog-mode text-mode))
 
-		   ;; auto-complete source of Emoji
-		   (use-package ac-emoji
-			 :defer t
-			 :ensure t
-			 :hook ((git-commit-mode markdown-mode) . ac-emoji-setup))
-
 		   (use-package dictionary
 			 ;; https://www.masteringemacs.org/article/wordsmithing-in-emacs
 			 :bind ("M-#" . dictionary-lookup-definition)
@@ -309,6 +303,12 @@ Example:
 			 :mode "\\.pp\\'")
 
 		   (require 'setup-eglot)
+
+		   (use-package flycheck-eglot
+			 :after eglot flycheck
+			 :config
+			 (global-flycheck-eglot-mode 1))
+
 		   (require 'setup-formatting)
 		   (require 'setup-ruby-mode)
 		   ;; (require 'setup-rust-mode)
