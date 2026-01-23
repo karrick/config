@@ -30,9 +30,9 @@
 			  tab-width 4)
 
   (my-format-on-save!
-   (when (executable-find "ruff")
-	 #'ruff-format-buffer)
-   "Python"))
+	  (when (executable-find "ruff")
+		#'ruff-format-buffer)
+	"Python"))
 
 ;; flycheck should already be loaded, but repeated here.
 (use-package flycheck
@@ -42,6 +42,13 @@
 (use-package python
   :hook
   ((python-mode python-ts-mode) . my-python-mode-setup))
+
+(with-eval-after-load 'eglot
+  (my-with-cli!
+	  (pylsp ("pylsp") "Python Language Server (Eglot)")
+	;; Register pylsp for Go modes
+	(add-to-list 'eglot-server-programs
+				 `((python-mode python-ts-mode) . (,pylsp)))))
 
 (use-package pyvenv
   :after python
