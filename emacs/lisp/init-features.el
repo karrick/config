@@ -410,16 +410,16 @@ Example:
 			 :bind (("C-x C-b" . #'ibuffer)))
 
 		   (use-package ksm-window
-			 :bind (("C-x w l" . ksm-window-config-load) ; restore window configuration from hash
-					("C-x w s" . ksm-window-config-save) ; copy window configuration to hash
-					("C-x w x" . ksm-window-config-swap) ; swap window configuration
-					("C-x 0" . ksm/delete-window)		  ; extension to existing behavior
-					("C-x 1" . ksm/delete-other-windows) ; extension to existing behavior
+			 :bind (("C-x w l" . ksm-window-layout-load)        ; restore window configuration from hash
+					("C-x w s" . ksm-window-layout-save)        ; copy window configuration to hash
+					("C-x w x" . ksm-window-layout-exchange)    ; exchange window configuration
+					("C-x 0" . ksm-window-delete-window)        ; extension to existing behavior
+					("C-x 1" . ksm-window-delete-other-windows) ; extension to existing behavior
 					;; ("C-x 2" . split-window-below) ; this is the default key binding
 					;; ("C-x 3" . split-window-right) ; this is the default key binding
-					("C-x -" . ksm-window-zoom-out) ; pop and restore window configuration from stack
-					("C-x +" . ksm-window-zoom-in) ; push window configuration to stack and delete other windows
-					("C-x C-p" . other-window-backward)))
+					("C-x -" . ksm-window-zoom-out)             ; pop and restore window configuration from stack
+					("C-x +" . ksm-window-zoom-in)              ; push window configuration to stack and delete other windows
+					("C-x C-p" . ksm-window-other-window-backward)))
 
 		   (use-package ksm-window-scrolling
 			 :bind (("M-N" . ksm/forward-line-scroll-up)
