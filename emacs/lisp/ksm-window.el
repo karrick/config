@@ -82,7 +82,7 @@
   (interactive
    (list
 	(ksm-window--read-layout-name "Save layout name" ksm-window--layout-name-current)
-	(ksm-window--read-layout-name "Load layout name" ksm-window--layout-name-previous)))
+	(ksm-window--read-layout-name "Load layout name" ksm-window--layout-name-previous t)))
   (ksm-window-layout-save save)
   (ksm-window-layout-load load))
 
