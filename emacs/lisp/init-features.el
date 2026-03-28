@@ -410,7 +410,8 @@ Example:
 			 :bind (("C-x C-b" . #'ibuffer)))
 
 		   (use-package ksm-window
-			 :bind (("C-x w l" . ksm-window-layout-load)        ; restore window configuration from hash
+			 :bind (("C-x w i" . ksm-window-layout-list)        ; restore window configuration from hash
+					("C-x w l" . ksm-window-layout-load)        ; restore window configuration from hash
 					("C-x w s" . ksm-window-layout-save)        ; copy window configuration to hash
 					("C-x w x" . ksm-window-layout-exchange)    ; exchange window configuration
 					("C-x 0" . ksm-window-delete-window)        ; extension to existing behavior
