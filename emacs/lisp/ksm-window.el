@@ -214,15 +214,11 @@ values from `ksm-window--layouts'."
 		  (if default
 			  (format "%s (default: %s): " prompt default)
 			(format "%s: " prompt)))
-		 (history
-		  (if require-match
-			  (seq-filter (lambda (name)
-							(member name layouts))
-						  ksm-window--layout-name-history)
-			ksm-window--layout-name-history))
-		 (history-var (make-symbol "ksm-window--layout-name-history"))
 		 (name nil))
-	(set history-var history)
+	(when require-match
+	  (setq ksm-window--layout-name-history
+			(seq-filter (lambda (n) (member n layouts))
+						ksm-window--layout-name-history)))
 	(setq name
 		  (completing-read
 		   full-prompt
@@ -230,7 +226,7 @@ values from `ksm-window--layouts'."
 		   nil
 		   require-match
 		   nil
-		   history-var
+		   'ksm-window--layout-name-history
 		   default))
 	(if (empty-string-p name) default name)))
 
