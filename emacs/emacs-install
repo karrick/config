@@ -339,13 +339,12 @@ if [ "$code" -ne 0 ] ; then
 	exit $code
 fi
 
-if [ "$os" = "macos" ] ; then
-	echo >&2 "################ Moving to /Applications..."
-	sudo /bin/mv nextstep/Emacs.app /Applications
-fi
-
 case $os in
-	macos) sudo /usr/bin/codesign --force --deep --sign - /Applications/MacPorts/Emacs.app ;;
+	macos)
+		echo >&2 "################ Moving to /Applications..."
+		sudo /bin/mv nextstep/Emacs.app /Applications
+		sudo /usr/bin/codesign --force --deep --sign - /Applications/MacPorts/Emacs.app
+		;;
 esac
 
 echo >&2 "################ Installation successful."
