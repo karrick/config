@@ -15,7 +15,7 @@
 # logins, install and configure the libpam-umask package.
 umask 027
 
-# # https://stackoverflow.com/questions/48574369/setting-term-variable-for-emacs-shell
+# https://stackoverflow.com/questions/48574369/setting-term-variable-for-emacs-shell
 # case ${INSIDE_EMACS#*,} in
 #	comint) echo >&2 "INSIDE_EMACS: comint" ;;
 #	tramp) echo >&2 "INSIDE_EMACS: tramp" ;;
@@ -149,6 +149,7 @@ path_clean() {
 	export MANPATH=$MANPATH_CLEAN
 	path_additions() {
 		export PATH="${PATH}:${PATH_ADDITIONS}"
+		# export PATH="${PATH}:/nix/profiles/mcdermot/default/bin:/desco/local/bin:/desco/systems/bin:/proj/systems/bin"
 		export MANPATH="${MANPATH}:${MANPATH_ADDITIONS}"
 		path_additions() {
 			echo >&2 "path additions already added..."
@@ -207,31 +208,28 @@ else
 	_SHELL="unknown"
 fi
 
+# ksh and sh use $ENV to find the interactive shell config.  Export it
+# unconditionally so that ksh sub-shells inherit it even when the login shell
+# is bash or zsh.  ksh ignores ENV for non-interactive shells, so this is safe
+# to export regardless of the current shell or mode.
+[ ! -r "$HOME/.shrc" ] || export ENV="$HOME/.shrc"
+
 case $_SHELL in
 	bash)
 		# /bin/bash only invokes $BASH_ENV when non-interactive, while /bin/sh
 		# and /bin/ksh only invoke $ENV when interactive. The goal is to
 		# enable re-use of ~/.profile and ~/.shrc for both /bin/sh, /bin/bash,
-		# /bin/ksh, and potentially other command line shells.
-		#
-		#     ln -s .config/.profile .profile
-		#     ln -s .config/.shrc .bashrc
-		[ -e "$HOME/.bashrc" ] || ln -s .config/.shrc .bashrc
+		# /bin/ksh, and potentially other command line shells.  Symlinks are
+		# managed by running 'make setup' from ~/.config.
 		. "$HOME/.bashrc"
 		;;
 	ksh|sh)
-		# /bin/ksh and /bin/sh merely need $ENV to be defined and point to the
-		# desired file to run for interactive shells.
-		[ ! -r "$HOME/.shrc" ] || export ENV="$HOME/.shrc"
+		: # ENV is already exported above.
 		;;
 	zsh)
 		# Zsh will invoke ~/.zshenv for all shells, then invoke ~/.zprofile
-		# for all login shells, then ~/.zshrc for all interactive shells. It
-		# is sufficient to create symbolic links to obtain similar behavior as
-		# other shells which are special cased above.
-		#
-		#     ln -s .profile .zprofile
-		#     ln -s .shrc    .zshrc
+		# for all login shells, then ~/.zshrc for all interactive shells.
+		# Symlinks are managed by running 'make setup' from ~/.config.
 		:
 		;;
 	*) echo >&2 "unrecognized shell: '${_SHELL}'" ;;
