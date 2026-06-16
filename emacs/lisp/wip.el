@@ -68,6 +68,8 @@ Strips the quote indentation prepended to pasted snippets."
 					 (delete-rectangle corner (point))))
 				 (set-marker end-marker nil))))
 
+		   (define-key global-map (kbd "C-c d") #'ksm/strip-common-indent)
+
 		   ;; serial-term
 		   (when nil
 			 ;; example use
