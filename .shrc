@@ -37,10 +37,6 @@ export HOSTNAME HOST
 #     7 - report working directory         https://github.com/maconcg/osc7
 #   133 - shell integration (A/B/C/D)      https://contour-terminal.org/vt-extensions/osc-133-shell-integration
 
-# function osc () {
-#     print -Pn "%{\e]${(j.;.)@}\e\\%}"
-# }
-
 set_gnu_screen_hardstatus_line () { printf "\e_%s\e\\" "$*"; } # Application Program Command (xterm window title also sets this)
 set_gnu_screen_window_title () { printf "\ek%s\e\\" "$*"; }	   # Title Definition String
 
@@ -95,14 +91,14 @@ case $_SHELL in
 
 		# OSC-133 shell integration sequences - empty when inside Emacs, which
 		# does not handle them.
-		if [ -z "$INSIDE_EMACS" ] ; then
-			_osc133_B='\[\e]133;B\e\\\]'                 # PROMPT END
-			_osc133_C='\[\e]133;C\e\\\]'                 # OUTPUT BEGIN
-			_osc133_DA='\[\e]133;D;$?\e\\\e]133;A\e\\\]' # OUTPUT END + PROMPT BEGIN
-		else
+		if [ -n "$INSIDE_EMACS" ] ; then
 			_osc133_B=''
 			_osc133_C=''
 			_osc133_DA=''
+		else
+			_osc133_B='\[\e]133;B\e\\\]'                 # PROMPT END
+			_osc133_C='\[\e]133;C\e\\\]'                 # OUTPUT BEGIN
+			_osc133_DA='\[\e]133;D;$?\e\\\e]133;A\e\\\]' # OUTPUT END + PROMPT BEGIN
 		fi
 
 		PROMPT_COMMAND=set_title_and_cwd
@@ -211,6 +207,8 @@ esac
 alias clip='xclip -selection clipboard'
 alias dfh='df -h -x devtmpfs -x tmpfs --output=source,used,size,pcent,iused,itotal,ipcent,target'
 alias git-head='git hl | head'
+alias gs='git status'
+alias gb='git branch --all'
 alias hlf='ls -hlF'
 alias hist='histogram --fold --descending'
 alias histr='histogram --fold --descending --raw'
