@@ -6,6 +6,8 @@
 
 ;; TODO: Consider https://github.com/cuonglm/flycheck-checkbashisms
 
+(add-hook 'sh-mode-hook (lambda () (setq indent-tabs-mode nil)))
+
 (let ((cmd (executable-find "shellcheck")))
   (if (null cmd)
 	  (message "Cannot find 'shellcheck' program.")
