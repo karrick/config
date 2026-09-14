@@ -60,7 +60,11 @@
 	 ("melpa-stable" . "https://stable.melpa.org/packages/")
 	 ("melpa" . "https://melpa.org/packages/")))
  '(package-selected-packages
-   '(buffer-move company deadgrep default-text-scale dpkg-dev-el flycheck-eglot go-dlv go-mode markdown-mode nix-mode puppet-mode pyvenv ruff-format rustic spell-fu switch-window unfill which-key yaml-mode yasnippet zenburn-theme zig-mode))
+   '(buffer-move company deadgrep default-text-scale dockerfile-mode dpkg-dev-el
+				 flycheck-eglot ghostel go-dlv go-mode hcl-mode markdown-mode
+				 nix-mode puppet-mode pyvenv ruff-format rustic spell-fu
+				 switch-window unfill which-key xterm-color yaml-mode
+				 yasnippet zenburn-theme zig-mode))
  '(scroll-bar-mode nil)
  '(scroll-conservatively 5)
  '(sh-basic-offset 4)

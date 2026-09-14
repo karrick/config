@@ -220,6 +220,7 @@ Example:
 		   (add-hook 'markdown-mode-hook #'visual-line-mode)
 
 		   (use-package ksm-align)
+		   (use-package ksm-clipboard)
 		   (use-package ksm-list)
 
 		   (use-package multiple-cursors
