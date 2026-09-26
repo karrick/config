@@ -63,6 +63,7 @@ echo "Feel free to erase this directory and all of its contents." > "$TMPDIR/DEL
 [ -n "$XDG_CONFIG_HOME" ] || export XDG_CONFIG_HOME="$HOME/.config" # Configuration: /etc
 [ -n "$XDG_DATA_HOME" ] || export XDG_DATA_HOME="$HOME/.local/share" # Application Data: /usr/share
 [ -n "$XDG_STATE_HOME" ] || export XDG_STATE_HOME="$HOME/.local/state" # Application State: /var/lib
+[ -n "$PARALLEL_JOBLOG_DIR" ] || export PARALLEL_JOBLOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/parallel"
 
 # Prefix several file-system locations to the PATH.
 #
