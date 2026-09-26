@@ -1,4 +1,4 @@
-;;; env-set-when-null -- sets environment variable when null
+;;; env-set-when-null -- sets environment variable when null  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

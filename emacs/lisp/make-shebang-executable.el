@@ -1,4 +1,4 @@
-;;; make-shebang-executable -- Make file corresponding to buffer executable when first two characters are `#!' and not already executable.
+;;; make-shebang-executable -- Make file corresponding to buffer executable when first two characters are `#!' and not already executable.  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

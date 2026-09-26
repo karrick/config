@@ -1,4 +1,4 @@
-;;; sort-commas -- sort a list of delimited strings in region
+;;; sort-commas -- sort a list of delimited strings in region  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

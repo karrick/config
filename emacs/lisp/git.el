@@ -1,3 +1,4 @@
+;;; git.el  -*- lexical-binding: t; -*-
 ;;;; Author: Karrick McDermott
 
 ;; TODO: git-push: add ability to push to other than origin master

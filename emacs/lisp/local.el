@@ -1,4 +1,4 @@
-;;; local -- configuration for the local environment
+;;; local -- configuration for the local environment  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

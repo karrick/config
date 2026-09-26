@@ -1,4 +1,4 @@
-;;; early-init.el --- Early initialization  -*- mode: emacs-lisp -*-
+;;; early-init.el --- Early initialization  -*- mode: emacs-lisp; lexical-binding: t; -*-
 
 ;; Enable full init debugging when requested via --debug-init
 

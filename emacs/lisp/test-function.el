@@ -1,4 +1,4 @@
-;;; test-function -- test function over a list of inputs and expected outputs
+;;; test-function -- test function over a list of inputs and expected outputs  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

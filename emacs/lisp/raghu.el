@@ -1,4 +1,4 @@
-;;; raghu -- various awesome functions from Raghu
+;;; raghu -- various awesome functions from Raghu  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

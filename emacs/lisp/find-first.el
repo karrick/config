@@ -1,4 +1,4 @@
-;;; find-first --- returns first element of list that satisfies a predicate
+;;; find-first --- returns first element of list that satisfies a predicate  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

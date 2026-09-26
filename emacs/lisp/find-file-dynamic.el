@@ -1,4 +1,4 @@
-;;; find-file-dynamic --- find-file-dynamic configuration
+;;; find-file-dynamic --- find-file-dynamic configuration  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

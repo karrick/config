@@ -1,4 +1,4 @@
-;;; vc-fossil.el --- VC backend for the fossil sofware configuraiton management system
+;;; vc-fossil.el --- VC backend for the fossil sofware configuraiton management system  -*- lexical-binding: t; -*-
 ;; Author: Venkat Iyer <venkat@comit.com>
 
 ;;; Commentary:

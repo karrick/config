@@ -1,3 +1,4 @@
+;;; irc-waiting.el  -*- lexical-binding: t; -*-
 (when nil
   (require 'erc-autoaway)
   (setq erc-auto-discard-away t

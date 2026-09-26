@@ -1,4 +1,4 @@
-;;; copy-and-comment -- copies the selected region and pastes a commented-out version of it above point.
+;;; copy-and-comment -- copies the selected region and pastes a commented-out version of it above point.  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

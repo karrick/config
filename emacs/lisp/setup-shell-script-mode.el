@@ -1,4 +1,4 @@
-;;; setup-shell-script-mode -- customizations for shell programming
+;;; setup-shell-script-mode -- customizations for shell programming  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

@@ -1,4 +1,4 @@
-;;; init-features.el --- Features initialization  -*- mode: emacs-lisp -*-
+;;; init-features.el --- Features initialization  -*- mode: emacs-lisp; lexical-binding: t; -*-
 
 ;;; Commentary:
 

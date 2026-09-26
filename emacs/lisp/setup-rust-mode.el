@@ -1,4 +1,4 @@
-;;; setup-rust-mode --- customizations for the Rust programming language
+;;; setup-rust-mode --- customizations for the Rust programming language  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

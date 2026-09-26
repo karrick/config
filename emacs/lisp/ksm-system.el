@@ -1,4 +1,4 @@
-;;; ksm-system -- introspect and return system name
+;;; ksm-system -- introspect and return system name  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

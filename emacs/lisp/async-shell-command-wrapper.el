@@ -1,4 +1,4 @@
-;;; async-shell-command-wrapper --- async shell commands are invoked in buffer named after the command
+;;; async-shell-command-wrapper --- async shell commands are invoked in buffer named after the command  -*- lexical-binding: t; -*-
 
 ;;; Code:
 

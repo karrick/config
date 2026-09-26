@@ -1,4 +1,4 @@
-;;; setup-zig-mode --- customizations for the Zig programming language
+;;; setup-zig-mode --- customizations for the Zig programming language  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

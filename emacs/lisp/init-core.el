@@ -1,4 +1,4 @@
-;;; init-core.el --- Core initialization  -*- mode: emacs-lisp -*-
+;;; init-core.el --- Core initialization  -*- mode: emacs-lisp; lexical-binding: t; -*-
 
 ;;; Commentary:
 

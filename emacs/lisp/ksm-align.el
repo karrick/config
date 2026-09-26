@@ -1,4 +1,4 @@
-;;; ksm-align -- align non space columns in a region.
+;;; ksm-align -- align non space columns in a region.  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

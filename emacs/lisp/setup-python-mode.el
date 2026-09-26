@@ -1,4 +1,4 @@
-;;; setup-python-mode -- customizations for Python programming language-info-alist
+;;; setup-python-mode -- customizations for Python programming language-info-alist  -*- lexical-binding: t; -*-
 
 ;;; Code:
 

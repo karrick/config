@@ -1,4 +1,4 @@
-;;; setup-javascript-mode -- customizations for JavaScript programming language
+;;; setup-javascript-mode -- customizations for JavaScript programming language  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

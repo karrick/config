@@ -1,4 +1,4 @@
-;;; ksm-list --- provides a few list functions
+;;; ksm-list --- provides a few list functions  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

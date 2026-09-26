@@ -1,4 +1,4 @@
-;;; setup-tree-sitter -- setup tree-sitter package
+;;; setup-tree-sitter -- setup tree-sitter package  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

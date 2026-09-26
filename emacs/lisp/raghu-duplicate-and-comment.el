@@ -1,3 +1,4 @@
+;;; raghu-duplicate-and-comment.el  -*- lexical-binding: t; -*-
 (defun raghu/duplicate-region-comment-original (beginning end)
   "Duplicate lines containing region, make the originals comments.
 

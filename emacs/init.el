@@ -1,4 +1,4 @@
-;;; package --- Summary: Emacs Initialization -*- mode: emacs-lisp -*-
+;;; package --- Summary: Emacs Initialization -*- mode: emacs-lisp; lexical-binding: t; -*-
 
 ;;; Commentary:
 
