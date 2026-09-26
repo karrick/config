@@ -1,4 +1,4 @@
-;;; paths -- set exec-path and PATH environment variable for child processes
+;;; paths -- set exec-path and PATH environment variable for child processes  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 ;;;

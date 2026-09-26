@@ -1,4 +1,4 @@
-;;; browser-open -- open URL in browser
+;;; browser-open -- open URL in browser  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

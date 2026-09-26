@@ -1,4 +1,4 @@
-;;; setup-elisp-mode -- customizations for Emacs Lisp programming language
+;;; setup-elisp-mode -- customizations for Emacs Lisp programming language  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

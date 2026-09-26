@@ -1,4 +1,4 @@
-;;; empty-string -- helpers for working with strings that may or not be empty
+;;; empty-string -- helpers for working with strings that may or not be empty  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

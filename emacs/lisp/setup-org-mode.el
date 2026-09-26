@@ -1,4 +1,4 @@
-;;; setup-org-mode -- customizations for org-mode
+;;; setup-org-mode -- customizations for org-mode  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

@@ -1,4 +1,4 @@
-;;; hrg -- search history directory for search term
+;;; hrg -- search history directory for search term  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

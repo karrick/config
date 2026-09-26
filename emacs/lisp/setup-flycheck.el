@@ -1,4 +1,4 @@
-;;; setup-flycheck -- setup flycheck package
+;;; setup-flycheck -- setup flycheck package  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

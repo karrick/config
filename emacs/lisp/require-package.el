@@ -1,4 +1,4 @@
-;;; require-package --- Summary
+;;; require-package --- Summary  -*- lexical-binding: t; -*-
 
 ;; package initialization functions
 

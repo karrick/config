@@ -1,4 +1,4 @@
-;;;; Author: Karrick McDermott
+;;;; Author: Karrick McDermott  -*- lexical-binding: t; -*-
 
 ;; TODO: git-push: add ability to push to other than origin master
 

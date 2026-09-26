@@ -1,4 +1,4 @@
-;;; wip -- work in progress
+;;; wip -- work in progress  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

@@ -1,4 +1,4 @@
-;;; ksm-window-scrolling --- provides a few handy window scrolling functions
+;;; ksm-window-scrolling --- provides a few handy window scrolling functions  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 ;;;

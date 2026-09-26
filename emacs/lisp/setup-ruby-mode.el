@@ -1,4 +1,4 @@
-;;; setup-ruby-mode -- customizations for Ruby programming language
+;;; setup-ruby-mode -- customizations for Ruby programming language  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

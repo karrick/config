@@ -1,4 +1,4 @@
-;;; clean-and-indent -- clean whitespace and fix indentation
+;;; clean-and-indent -- clean whitespace and fix indentation  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

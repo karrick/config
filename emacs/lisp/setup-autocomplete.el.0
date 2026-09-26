@@ -1,4 +1,4 @@
-;;; setup-autocomplete --- autocomplete configuration
+;;; setup-autocomplete --- autocomplete configuration  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

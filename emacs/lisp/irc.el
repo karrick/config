@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 (eval-after-load "erc"
   (progn
 	(defmacro erc-bouncer-connect (command server port nick ssl pass)

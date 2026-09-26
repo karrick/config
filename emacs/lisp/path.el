@@ -1,4 +1,4 @@
-;;; path -- modifies exec-path and environment PATH variable for child processes
+;;; path -- modifies exec-path and environment PATH variable for child processes  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

@@ -1,4 +1,4 @@
-;;; nice-font --- provides a few handy font manipulation functions
+;;; nice-font --- provides a few handy font manipulation functions  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

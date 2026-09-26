@@ -1,4 +1,4 @@
-;;; sudo -- Use TRAMP to `sudo' the current buffer
+;;; sudo -- Use TRAMP to `sudo' the current buffer  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

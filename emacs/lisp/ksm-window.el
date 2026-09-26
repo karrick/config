@@ -1,4 +1,4 @@
-;;; ksm-window --- provides handy window management functions
+;;; ksm-window --- provides handy window management functions  -*- lexical-binding: t; -*-
 ;;;
 ;;; Commentary:
 ;;;
