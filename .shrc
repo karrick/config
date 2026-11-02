@@ -6,6 +6,15 @@
 # here. Alternatively, things that only need to be done once when a user logs
 # into the machine should be done in ~/.profile file.
 
+# Interactive shells only.  A non-interactive shell can still source this
+# file (bash via BASH_ENV, or a bash built with SSH_SOURCE_BASHRC that thinks
+# sshd started it, such as git's Nix bash run from an Emacs started over ssh);
+# stop here so it loads no completions, prompt setup, or startup output.
+case $- in
+	*i*) ;;
+	*) return ;;
+esac
+
 if test -n "$BASH_VERSION" ; then
 	_SHELL="bash"
 elif test -n "$KSH_VERSION" ; then
@@ -81,7 +90,7 @@ case $_SHELL in
 		# enable programmable completion features (you don't need to enable
 		# this, if it's already enabled in /etc/bash.bashrc and /etc/profile
 		# sources /etc/bash.bashrc).
-		if ! shopt -oq posix; then
+		if ! shopt -oq posix && shopt -q progcomp 2>/dev/null; then
 			if [ -f /usr/share/bash-completion/bash_completion ]; then
 				. /usr/share/bash-completion/bash_completion
 			elif [ -f /etc/bash_completion ]; then
@@ -109,7 +118,7 @@ case $_SHELL in
 			if [ -n "$HOSTPROMPT" ] ; then
 				PS1="${_osc133_DA}\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[\$( _code=\$? ; if [ \$_code -eq 0 ] ; then echo \"\e[32m\$_code\e[39m\" ; else echo \"\e[1;31m\$_code\e[22;39m\" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]${HOSTPROMPT}\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n"
 			else
-				PS1="${_osc133_DA}\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[\$( _code=\$? ; if [ \$_code -eq 0 ] ; then echo \"\e[32m\$_code\e[39m\" ; else echo \"\e[1;31m\$_code\e[22;39m\" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\h\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n"
+				PS1="${_osc133_DA}\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[\$( _code=\$? ; if [ \$_code -eq 0 ] ; then echo \"\e[32m\$_code\e[39m\" ; else echo \"\e[1;31m\$_code\e[22;39m\" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n"
 			fi
 
 			if which git_prompt >/dev/null 2>&1 ; then
@@ -121,12 +130,12 @@ case $_SHELL in
 
 		shell_prompt_sans_color () {
 			PS0="# START: \D{%F}T\D{%T}\D{%Z}\n${_osc133_C}"
-			PS1="${_osc133_DA}# FINISH: \D{%F}T\D{%T}\D{%Z} [\$?]\n# \u@\h:\w\n\$ ${_osc133_B}"
+			PS1="${_osc133_DA}# FINISH: \D{%F}T\D{%T}\D{%Z} [\$?]\n# \u@\H:\w\n\$ ${_osc133_B}"
 		}
 
 		shell_prompt_with_color () {
 			PS0="\[\e[2m\]# START: \D{%F}T\D{%T}\D{%Z}\[\e[22m\]\n${_osc133_C}"
-			PS1="${_osc133_DA}\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[\$( _code=\$? ; if [ \$_code -eq 0 ] ; then echo \"\e[32m\$_code\e[39m\" ; else echo \"\e[1;31m\$_code\e[22;39m\" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\h\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n\$ ${_osc133_B}"
+			PS1="${_osc133_DA}\[\e[2m\]# FINISH: \D{%F}T\D{%T}\D{%Z}\[\e[22m\] [\[\$( _code=\$? ; if [ \$_code -eq 0 ] ; then echo \"\e[32m\$_code\e[39m\" ; else echo \"\e[1;31m\$_code\e[22;39m\" ; fi )\]]\n# \[\e[32m\]\u\[\e[39m\]@\[\e[36m\]\H\[\e[39m\]:\[\e[33m\]\w\[\e[39m\]\n\$ ${_osc133_B}"
 		}
 
 		shell_prompt_with_color
@@ -135,11 +144,11 @@ case $_SHELL in
 	ksh)
 		_ksh_prompt_with_color () {
 			printf "# \033[32m%s\033[39m@\033[36m%s\033[39m:\033[33m%s\033[39m\n" \
-				   "$LOGNAME" "$HOST" "${PWD/#$HOME/\~}"
+				   "$LOGNAME" "$HOSTNAME" "${PWD/#$HOME/\~}"
 		}
 
 		shell_prompt_sans_color () {
-			PS1='# ${LOGNAME}@${HOST}:${PWD/#$HOME/\~}
+			PS1='# ${LOGNAME}@${HOSTNAME}:${PWD/#$HOME/\~}
 $ '
 		}
 
@@ -184,13 +193,13 @@ $ '
 		shell_prompt_sans_color () {
 			add-zsh-hook -d preexec _prompt_preexec_with_color
 			add-zsh-hook    preexec _prompt_preexec_sans_color
-			PROMPT="${_osc133_DA}"$'# FINISH: %D{%FT%T%Z} [%(?,0,%?)]\n# %n@%m:%~\n'"${_osc133_B}"$'%# '
+			PROMPT="${_osc133_DA}"$'# FINISH: %D{%FT%T%Z} [%(?,0,%?)]\n# %n@'"${HOSTNAME}"$':%~\n'"${_osc133_B}"$'%# '
 		}
 
 		shell_prompt_with_color () {
 			add-zsh-hook -d preexec _prompt_preexec_sans_color
 			add-zsh-hook    preexec _prompt_preexec_with_color
-			PROMPT="${_osc133_DA}"$'\e[2m# FINISH: %D{%FT%T%Z}\e[22m [%(?,\e[32m0\e[39m,\e[1;31m%?\e[22;39m)]\n# \e[32m%n\e[39m@\e[36m%m\e[39m:\e[33m%~\e[39m\n'"${_osc133_B}"$'%# '
+			PROMPT="${_osc133_DA}"$'\e[2m# FINISH: %D{%FT%T%Z}\e[22m [%(?,\e[32m0\e[39m,\e[1;31m%?\e[22;39m)]\n# \e[32m%n\e[39m@\e[36m'"${HOSTNAME}"$'\e[39m:\e[33m%~\e[39m\n'"${_osc133_B}"$'%# '
 		}
 
 		shell_prompt_with_color
@@ -206,6 +215,7 @@ esac
 
 alias clip='xclip -selection clipboard'
 alias dfh='df -h -x devtmpfs -x tmpfs --output=source,used,size,pcent,iused,itotal,ipcent,target'
+alias gh-pr-edit-body="gh pr edit --body-file PR-BODY.md"
 alias git-head='git hl | head'
 alias gs='git status'
 alias gb='git branch --all'
@@ -213,6 +223,7 @@ alias hlf='ls -hlF'
 alias hist='histogram --fold --descending'
 alias histr='histogram --fold --descending --raw'
 alias histw='histogram --fold --descending --width 80'
+alias man='man --no-hyphenation'
 
 # NOTE: The following aliases intentionally expand when defined rather than
 # when used.
@@ -238,6 +249,8 @@ dos2unix () { tr -d '\r' <"$1" >"$2" ; }
 mac2unix () { tr '\r' '\n' <"$1" >"$2" ; }
 unix2mac () { tr '\n' '\r' <"$1" >"$2" ; }
 unix2dos () { ruby -pe '$_=$_.gsub(/$/, "\r")' <"$1" >"$2" ; }
+
+yes () { echo "${1:-y}" ; }	# guard against fat-fingering GNU yes's infinite stream; real tool: `command yes`
 
 [ ! -r "$HOME/.cargo/env" ] || . "$HOME/.cargo/env"
 

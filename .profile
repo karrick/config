@@ -23,6 +23,9 @@ umask 027
 #	*) echo >&2 "INSIDE_EMACS: [$INSIDE_EMACS]" ;;
 # esac
 
+basename=${0##*/}
+LOGNAME=${LOGNAME:-$(id -un)}
+
 arch=$(uname -m)
 case $arch in
 	amd64|x86_64)  arch=amd64 ;;
@@ -54,6 +57,7 @@ elif [ "$TMPDIR" = "${TMPDIR%${LOGNAME}}" ] ; then
 	export TMPDIR="${TMPDIR%/}/$LOGNAME"
 fi
 mkdir -p "$TMPDIR"
+chmod 750 "$TMPDIR"
 echo "Feel free to erase this directory and all of its contents." > "$TMPDIR/DELETE-THIS-DIRECTORY-IF-TOO-LARGE.txt"
 
 # https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
@@ -63,7 +67,7 @@ echo "Feel free to erase this directory and all of its contents." > "$TMPDIR/DEL
 [ -n "$XDG_CONFIG_HOME" ] || export XDG_CONFIG_HOME="$HOME/.config" # Configuration: /etc
 [ -n "$XDG_DATA_HOME" ] || export XDG_DATA_HOME="$HOME/.local/share" # Application Data: /usr/share
 [ -n "$XDG_STATE_HOME" ] || export XDG_STATE_HOME="$HOME/.local/state" # Application State: /var/lib
-[ -n "$PARALLEL_JOBLOG_DIR" ] || export PARALLEL_JOBLOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/parallel"
+[ -n "$PARALLEL_JOBLOG_DIR" ] || export PARALLEL_JOBLOG_DIR="${XDG_STATE_HOME}/parallel" # parallel-* job logs
 
 # Prefix several file-system locations to the PATH.
 #
@@ -86,8 +90,6 @@ for i in \
 		/opt/local/bin \
 		/usr/sbin \
 		/usr/bin \
-		/sbin \
-		/bin \
 	; do
 	if ! : ; then
 		[ -d "$i" ] && PATH="${PATH:+$PATH:}${i}"
@@ -102,7 +104,7 @@ export PATH
 
 # Track components from original PATH that are not in custom PATH, removing
 # duplicates, but leaving elements in same relative order.
-PATH_ADDITIONS=$(echo "$PATH0" | awk -v drop=$PATH '
+PATH_ADDITIONS=$(echo "$PATH0" | awk -v drop="$PATH" '
 BEGIN {
 	  FS=":";
 	  c = split(drop, drop_list);
@@ -150,7 +152,6 @@ path_clean() {
 	export MANPATH=$MANPATH_CLEAN
 	path_additions() {
 		export PATH="${PATH}:${PATH_ADDITIONS}"
-		# export PATH="${PATH}:/nix/profiles/mcdermot/default/bin:/desco/local/bin:/desco/systems/bin:/proj/systems/bin"
 		export MANPATH="${MANPATH}:${MANPATH_ADDITIONS}"
 		path_additions() {
 			echo >&2 "path additions already added..."
@@ -166,29 +167,61 @@ unset i
 export EDITOR=emacsclient
 export VISUAL=emacsclient
 
-# CARGO_INSTALL_ROOT: The directory where 'cargo install' will install
-# programs.
-[ -n "$CARGO_INSTALL_ROOT" ] || export CARGO_INSTALL_ROOT="$XDG_DATA_HOME/${os}/${arch}/bin"
+# Durable, shared, mostly OS/arch-neutral dependency downloads.
+# 
+# CARGO_HOME is not purely a cache: it may contain bin/, config.toml, and
+# credentials.toml. This shared setting is appropriate when using
+# system-provided cargo/rustc, or when not relying on rustup proxies from
+# "$CARGO_HOME/bin".
+if : ; then
+    # Shared Cargo dependency cache/home. This is good for system-provided
+    # cargo/rustc, or when not relying on rustup proxies from "$CARGO_HOME/bin".
+    [ -n "$CARGO_HOME" ] || export CARGO_HOME="$XDG_DATA_HOME/cargo"
+else
+    # If using rustup-managed cargo/rustc from "$CARGO_HOME/bin", prefer instead:
+    [ -n "$CARGO_HOME" ] || export CARGO_HOME="$XDG_DATA_HOME/${os}/${arch}/cargo"
+fi
 
-# GOBIN: The directory where 'go install' will install a command. (To allow
-# sharing among different machines, places in HOME.)
-[ -n "$GOBIN" ] || export GOBIN="$XDG_DATA_HOME/${os}/${arch}/bin"
-
-# GOCACHE: The directory where the go command will store cached information
-# for reuse in future builds. (Highly ephemeral data. Access latency
-# prioritized over availability.)
-[ -n "$GOCACHE" ] || export GOCACHE="$XDG_CACHE_HOME/${os}/${arch}/go-build"
-
-# GOMODCACHE: The directory where the go command will store downloaded
-# modules. (Once downloaded, should never need to download again. Defaults to
-# $GOPATH/pkg/mod.)
+# Go module source cache. Mostly OS/arch-neutral.
 [ -n "$GOMODCACHE" ] || export GOMODCACHE="$XDG_DATA_HOME/go/pkg/mod"
 
-# GOTMPDIR: The directory where the go command will write temporary source
-# files, packages, and binaries. (Highly ephemeral data. Access latency
-# prioritized over availability.)
+# Durable, platform-specific installed binaries/toolchains.
+#
+# cargo install puts binaries in "$CARGO_INSTALL_ROOT/bin".
+[ -n "$CARGO_INSTALL_ROOT" ] || export CARGO_INSTALL_ROOT="$XDG_DATA_HOME/${os}/${arch}"
+
+# go install puts binaries directly in "$GOBIN".
+[ -n "$GOBIN" ] || export GOBIN="$XDG_DATA_HOME/${os}/${arch}/bin"
+
+# Rustup toolchains are native/platform-specific.
+[ -n "$RUSTUP_HOME" ] || export RUSTUP_HOME="$XDG_DATA_HOME/${os}/${arch}/rustup"
+
+# Ephemeral, local, platform-specific build artifacts.
+[ -n "$CARGO_TARGET_DIR" ] || export CARGO_TARGET_DIR="$XDG_CACHE_HOME/${os}/${arch}/cargo-target"
+[ -n "$GOCACHE" ] || export GOCACHE="$XDG_CACHE_HOME/${os}/${arch}/go-build"
 [ -n "$GOTMPDIR" ] || export GOTMPDIR="$XDG_CACHE_HOME/${os}/${arch}/go-tmp"
-mkdir -p "$GOTMPDIR" # As of Go v1.20, it does not create this directory.
+
+mkdir -p \
+	"$CARGO_HOME" \
+	"$CARGO_INSTALL_ROOT/bin" \
+	"$CARGO_TARGET_DIR" \
+	"$GOBIN" \
+	"$GOCACHE" \
+	"$GOMODCACHE" \
+	"$GOTMPDIR" \
+	"$RUSTUP_HOME"
+
+chmod 750 \
+	"$CARGO_INSTALL_ROOT/bin" \
+	"$CARGO_TARGET_DIR" \
+	"$GOBIN" \
+	"$GOCACHE" \
+	"$GOMODCACHE" \
+	"$GOTMPDIR" \
+	"$RUSTUP_HOME"
+
+# CARGO_HOME may contain credentials.toml, so keep it private.
+chmod 700 "$CARGO_HOME"
 
 mkdir -p "$XDG_STATE_HOME/history"
 export HISTCONTROL=ignoredups
