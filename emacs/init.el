@@ -45,7 +45,6 @@
  '(fill-column 78)
  '(highlight-indent-guides-method 'character)
  '(inhibit-startup-screen t)
- '(line-number-mode t)
  '(make-backup-files nil)
  '(menu-bar-mode nil)
  '(minibuffer-prompt-properties
